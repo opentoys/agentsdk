@@ -80,6 +80,17 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (string, error) {
 	return a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
 }
 
+// NewChat reuse all configurations, just reset context message
+func (a *Agent) NewChat(history []openai.ChatCompletionMessage) (n *Agent) {
+	n = &Agent{
+		client:    a.client,
+		cfg:       a.cfg,
+		messages:  history,
+		mcpClient: a.mcpClient,
+	}
+	return
+}
+
 // selectAndPrepareSkill discovers and selects the appropriate skill.
 func (a *Agent) selectAndPrepareSkill(ctx context.Context, userPrompt string) (*skill.SkillPackage, error) {
 	availableSkills, err := a.discoverSkills(a.cfg.SkillsDir)

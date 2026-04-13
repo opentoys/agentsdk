@@ -28,4 +28,6 @@ func main() {
 		panic(e)
 	}
 	fmt.Println(resp)
+
+	agent.NewChat(nil).Run(context.Background(), os.Getenv("INPUT"))
 }
