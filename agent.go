@@ -71,13 +71,14 @@ func New(cfg *Config) (a *Agent, e error) {
 }
 
 // Run executes the main skill selection and execution logic for a single turn.
-func (a *Agent) Run(ctx context.Context, userPrompt string) (string, error) {
+func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e error) {
 	selectedSkill, err := a.selectAndPrepareSkill(ctx, userPrompt)
 	if err != nil {
 		return "", err
 	}
 
-	return a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
+	resp, e = a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
+	return
 }
 
 // NewChat reuse all configurations, just reset context message

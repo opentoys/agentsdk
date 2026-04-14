@@ -2,13 +2,14 @@ package skill
 
 import (
 	"bytes"
-	"encoding/json"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 // SkillPackage represents a fully and finely parsed Claude Skill package
@@ -72,7 +73,7 @@ func extractFrontmatterAndBody(data []byte) (SkillMeta, string, error) {
 	}
 
 	// Parse frontmatter
-	if err := json.Unmarshal(parts[1], &meta); err != nil {
+	if err := yaml.Unmarshal(parts[1], &meta); err != nil {
 		return meta, "", fmt.Errorf("failed to parse SKILL.md frontmatter: %w", err)
 	}
 
