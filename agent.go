@@ -14,6 +14,17 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+const xcontextid = "x-context-id"
+
+func GetContextID(ctx context.Context) (id string) {
+	id, _ = ctx.Value(xcontextid).(string)
+	return
+}
+
+func SetContextID(ctx context.Context, id string) context.Context {
+	return context.WithValue(ctx, xcontextid, id)
+}
+
 // OpenAIChatClient interface for dependency injection and testing
 type OpenAIChatClient interface {
 	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error)
@@ -81,12 +92,39 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e erro
 	return
 }
 
+// Chat reuse all configurations, just reset context message
+func (a *Agent) Chat(ctx context.Context, prompt string) (content string, e error) {
+	req := openai.ChatCompletionRequest{
+		Model: a.cfg.Model,
+		Messages: []openai.ChatCompletionMessage{
+			{
+				Role:    openai.ChatMessageRoleUser,
+				Content: prompt,
+			},
+		},
+		Temperature: 0,
+	}
+	a.debugPrintRequest(req)
+	resp, err := a.client.CreateChatCompletion(ctx, req)
+	if err != nil {
+		return "", err
+	}
+	a.debugPrintResponse(resp)
+	content = resp.Choices[0].Message.Content
+	return
+}
+
+// Messages reuse all configurations, just reset context message
+func (a *Agent) Messages() (lst []openai.ChatCompletionMessage) {
+	return append(lst, a.messages...)
+}
+
 // NewChat reuse all configurations, just reset context message
 func (a *Agent) NewChat(history []openai.ChatCompletionMessage) (n *Agent) {
 	n = &Agent{
 		client:    a.client,
 		cfg:       a.cfg,
-		messages:  history,
+		messages:  append([]openai.ChatCompletionMessage{}, history...),
 		mcpClient: a.mcpClient,
 	}
 	return

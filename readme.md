@@ -29,3 +29,4 @@ A minimized agent sdk that supports mcp and skills calls.
 ### 参考项目
 
 1. [goskills](https://github.com/smallnest/goskills)
+2. [anna](https://github.com/vaayne/anna)
