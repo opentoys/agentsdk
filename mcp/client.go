@@ -10,8 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/modelcontextprotocol/go-sdk/mcp"
-	"github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
 )
 
 // Client manages connections to multiple MCP servers.
