@@ -71,7 +71,7 @@ type SSEOptions struct {
 	// If nil, default (zero-value) cross-origin protection will be used.
 	// Use `disablecrossoriginprotection` MCPGODEBUG compatibility parameter
 	// to disable the default protection until v1.7.0.
-	CrossOriginProtection *http.CrossOriginProtection
+	CrossOriginProtection *CrossOriginProtection
 }
 
 // NewSSEHandler returns a new [SSEHandler] that creates and manages MCP
@@ -98,7 +98,7 @@ func NewSSEHandler(getServer func(request *http.Request) *Server, opts *SSEOptio
 	}
 
 	if s.opts.CrossOriginProtection == nil {
-		s.opts.CrossOriginProtection = &http.CrossOriginProtection{}
+		s.opts.CrossOriginProtection = &CrossOriginProtection{}
 	}
 
 	return s

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
+	"github.com/sashabaranov/go-openai"
 )
 
 // Client manages connections to multiple MCP servers.

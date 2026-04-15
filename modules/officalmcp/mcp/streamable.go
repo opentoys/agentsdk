@@ -183,7 +183,7 @@ type StreamableHTTPOptions struct {
 	// If nil, default (zero-value) cross-origin protection will be used.
 	// Use `disablecrossoriginprotection` MCPGODEBUG compatibility parameter
 	// to disable the default protection until v1.7.0.
-	CrossOriginProtection *http.CrossOriginProtection
+	CrossOriginProtection *CrossOriginProtection
 }
 
 // NewStreamableHTTPHandler returns a new [StreamableHTTPHandler].
@@ -203,7 +203,7 @@ func NewStreamableHTTPHandler(getServer func(*http.Request) *Server, opts *Strea
 	h.opts.Logger = ensureLogger(h.opts.Logger)
 
 	if h.opts.CrossOriginProtection == nil {
-		h.opts.CrossOriginProtection = &http.CrossOriginProtection{}
+		h.opts.CrossOriginProtection = &CrossOriginProtection{}
 	}
 
 	return h
