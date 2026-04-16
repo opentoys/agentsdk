@@ -1,0 +1,4 @@
+.vscode/
+main
+**/__debug**
+examples/**/*.json

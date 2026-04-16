@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opentoys/agentsdk/tool"
 	openai "github.com/sashabaranov/go-openai"
 )
 
@@ -17,21 +16,19 @@ func GenerateToolDefinitions(skill *SkillPackage) ([]openai.Tool, map[string]str
 	scriptMap := make(map[string]string)
 
 	// 1. Base Tools
-	baseTools := tool.GetBaseTools()
-
 	if len(skill.Meta.AllowedTools) > 0 {
 		allowedMap := make(map[string]bool)
 		for _, t := range skill.Meta.AllowedTools {
 			allowedMap[t] = true
 		}
 
-		for _, t := range baseTools {
+		for _, t := range skill.BaseTools {
 			if allowedMap[t.Function.Name] {
 				tools = append(tools, t)
 			}
 		}
 	} else {
-		tools = append(tools, baseTools...)
+		tools = append(tools, skill.BaseTools...)
 	}
 
 	// 2. Script Tools - 优先使用 SKILL.md 中定义的工具

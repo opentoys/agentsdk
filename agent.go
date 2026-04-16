@@ -48,6 +48,7 @@ type Config struct {
 	MCPMaxRetries int
 	Debug         bool
 	History       []openai.ChatCompletionMessage
+	BaseTools     map[string]*tool.Tool
 }
 
 // New creates and initializes a new Agent.
@@ -87,7 +88,7 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e erro
 	if err != nil {
 		return "", err
 	}
-
+	selectedSkill.BaseTools = tool.Tools(a.cfg.BaseTools).Base()
 	resp, e = a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
 	return
 }
@@ -195,7 +196,7 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	sb.WriteString("\nBased on the user request and guidelines above, which single skill is the most appropriate to use?")
 	sb.WriteString("\n\nIMPORTANT: You MUST select exactly one skill from the above list, even if the request seems simple. Respond with ONLY the skill name, nothing else. Do not explain your choice or answer the question directly.")
 
-	skillPrompt := skill.SkillsToPrompt(skills)
+	skillPrompt := skill.SkillsToPrompt(skills, a.cfg.BaseTools)
 
 	// Use a temporary message history for skill selection
 	selectionMessages := []openai.ChatCompletionMessage{
@@ -452,37 +453,16 @@ func cleanToolArguments(args string) string {
 func (a *Agent) executeToolCall(toolCall openai.ToolCall, scriptMap map[string]string, skillPath string) (string, error) {
 	var toolOutput string
 	var err error
-
+	// Set workdir if skillPath is available
+	if skillPath != "" {
+		os.Setenv("WORKDIR", skillPath)
+		defer os.Unsetenv("WORKDIR")
+	}
 	// Clean the arguments before parsing
 	cleanedArgs := cleanToolArguments(toolCall.Function.Arguments)
 
-	switch toolCall.Function.Name {
-	case "bash":
-		var params struct {
-			Command string `json:"command"`
-		}
-		if err = json.Unmarshal([]byte(cleanedArgs), &params); err != nil {
-			return "", fmt.Errorf("failed to unmarshal bash arguments: %w (cleaned args: %s)", err, cleanedArgs)
-		}
-
-		// Set workdir if skillPath is available
-		if skillPath != "" {
-			os.Setenv("WORKDIR", skillPath)
-			defer os.Unsetenv("WORKDIR")
-		}
-
-		toolOutput, err = tool.Bash(params.Command)
-
-	case "tavily_search":
-		var params struct {
-			Query string `json:"query"`
-		}
-		if err = json.Unmarshal([]byte(cleanedArgs), &params); err != nil {
-			return "", fmt.Errorf("failed to unmarshal tavily_search arguments: %w (cleaned args: %s)", err, cleanedArgs)
-		}
-		toolOutput, err = tool.TavilySearch(params.Query)
-
-	default:
+	var exec, ok = a.cfg.BaseTools[toolCall.Function.Name]
+	if !ok {
 		// Handle custom script tools from scriptMap
 		if scriptPath, ok := scriptMap[toolCall.Function.Name]; ok {
 			var params struct {
@@ -511,18 +491,14 @@ func (a *Agent) executeToolCall(toolCall openai.ToolCall, scriptMap map[string]s
 				}
 			}
 
-			// Set workdir if skillPath is available
-			if skillPath != "" {
-				os.Setenv("WORKDIR", skillPath)
-				defer os.Unsetenv("WORKDIR")
-			}
-
 			toolOutput, err = tool.Bash(cmd)
-		} else {
-			return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
+			if err != nil {
+				return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, err)
+			}
 		}
+		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}
-
+	toolOutput, err = exec.Exec(cleanedArgs)
 	if err != nil {
 		return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, err)
 	}

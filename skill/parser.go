@@ -9,6 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/opentoys/agentsdk/tool"
+	"github.com/sashabaranov/go-openai"
 	"gopkg.in/yaml.v3"
 )
 
@@ -18,6 +20,7 @@ type SkillPackage struct {
 	Meta      SkillMeta      `json:"meta"`
 	Body      string         `json:"body"` // Raw Markdown content of SKILL.md body
 	Resources SkillResources `json:"resources"`
+	BaseTools []openai.Tool  `json:"-"`
 }
 
 // ToolParameter 定义工具参数
@@ -318,7 +321,7 @@ func ParseSkillPackages(rootDir string) ([]*SkillPackage, error) {
 }
 
 // SkillsToPrompt converts a slice of SkillPackage objects to a prompt string
-func SkillsToPrompt(skills map[string]SkillPackage) string {
+func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]*tool.Tool) string {
 	var builder strings.Builder
 
 	// Add skills instructions header
@@ -335,25 +338,19 @@ func SkillsToPrompt(skills map[string]SkillPackage) string {
 	builder.WriteString("- Do not invoke a skill that is already running\n")
 	builder.WriteString("</skills_instructions>\n\n")
 
-	// Add available tools instructions
-	builder.WriteString("<available_tools_instructions>\n")
-	builder.WriteString("When working on tasks, you have access to the following tools:\n\n")
-	builder.WriteString("**bash(command)**: Universal tool for executing shell commands:\n")
-	builder.WriteString("- File operations: cat, grep, echo, head, tail, find, etc.\n")
-	builder.WriteString("- Script execution: python3, node, npx tsx, bash, etc.\n")
-	builder.WriteString("- Git operations: git status, git log, git diff, etc.\n")
-	builder.WriteString("- Package management: npm, pip, cargo, etc.\n")
-	builder.WriteString("  Use bash for virtually all operations including file I/O and script execution.\n\n")
-
-	builder.WriteString("**tavily_search(query)**: Perform web search using the Tavily API.\n")
-	builder.WriteString("  Use when you need to search the web for current information.\n\n")
-
-	builder.WriteString("**IMPORTANT Guidelines:**\n")
-	builder.WriteString("- When a skill asks you to \"create a file\", use: bash echo 'content' > file.txt\n")
-	builder.WriteString("- When a skill asks you to \"read a file\", use: bash cat file.txt\n")
-	builder.WriteString("- When a skill asks you to \"search in files\", use: bash grep 'pattern' file\n")
-	builder.WriteString("- Only execute scripts that are part of the skill's scripts directory\n")
-	builder.WriteString("</available_tools_instructions>\n\n")
+	if len(tools) > 0 {
+		// Add available tools instructions
+		builder.WriteString("<available_tools_instructions>\n")
+		builder.WriteString("When working on tasks, you have access to the following tools:\n\n")
+		for _, v := range tools {
+			if v.Prompt != "" {
+				builder.WriteString(v.Prompt + "\n")
+			} else {
+				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Define.Function.Name, v.Define.Function.Description))
+			}
+		}
+		builder.WriteString("</available_tools_instructions>\n\n")
+	}
 
 	// Add available skills section
 	builder.WriteString("<available_skills>\n")

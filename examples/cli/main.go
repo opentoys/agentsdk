@@ -9,17 +9,21 @@ import (
 
 	"github.com/opentoys/agentsdk"
 	"github.com/opentoys/agentsdk/memory"
+	"github.com/opentoys/agentsdk/tool"
 	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
 	rcfg := &agentsdk.Config{
-		SkillsDir:  os.Getenv("SKILL_DIR"),
-		MCPServers: nil,
-		APIKey:     os.Getenv("OPENAI_API_KEY"),
-		APIBase:    os.Getenv("OPENAI_API_BASE"),
-		Model:      os.Getenv("OPENAI_API_MODE"),
-		Debug:      true,
+		SkillsDir: os.Getenv("SKILL_DIR"),
+		APIKey:    os.Getenv("OPENAI_API_KEY"),
+		APIBase:   os.Getenv("OPENAI_API_BASE"),
+		Model:     os.Getenv("OPENAI_API_MODE"),
+		Debug:     true,
+		BaseTools: map[string]*tool.Tool{
+			"http": tool.DefineHttpRequest(),
+			"read": tool.DefineReadLocal(),
+		},
 	}
 
 	var start = time.Now()
@@ -56,5 +60,4 @@ func main() {
 	fmt.Println("系统结束", time.Since(start))
 	fmt.Println(resp)
 
-	// agent.NewChat(nil).Run(context.Background(), os.Getenv("INPUT"))
 }

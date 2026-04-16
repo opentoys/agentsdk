@@ -9,7 +9,44 @@ import (
 	"net/http"
 	"os"
 	"time"
+
+	"github.com/sashabaranov/go-openai"
 )
+
+func DefineTavilySearch() *Tool {
+	return &Tool{
+		Define: openai.Tool{
+			Type: openai.ToolTypeFunction,
+			Function: &openai.FunctionDefinition{
+				Name:        "tavily_search",
+				Description: "Performs a web search using the Tavily API for the given query and returns a summary of results.",
+				Parameters: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"query": map[string]any{
+							"type":        "string",
+							"description": "The search query.",
+						},
+					},
+					"required": []string{"query"},
+				},
+			},
+		},
+		Exec: func(in string) (out string, e error) {
+			var params struct {
+				Query string `json:"query"`
+			}
+			if e = json.Unmarshal([]byte(in), &params); e != nil {
+				e = fmt.Errorf("failed to unmarshal tavily_search arguments: %w (cleaned args: %s)", e, in)
+				return
+			}
+			return TavilySearch(params.Query)
+		},
+		Prompt: `**tavily_search(query)**: Perform web search using the Tavily API.
+  Use when you need to search the web for current information.
+  `,
+	}
+}
 
 // TavilySearch performs a web search using the Tavily API.
 func TavilySearch(query string) (string, error) {

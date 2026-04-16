@@ -2,13 +2,61 @@ package tool
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	openai "github.com/sashabaranov/go-openai"
 )
+
+func DefineBashTool() *Tool {
+	return &Tool{
+		Define: openai.Tool{
+			Type: openai.ToolTypeFunction,
+			Function: &openai.FunctionDefinition{
+				Name:        "bash",
+				Description: "Run a shell command. Use for: file operations (cat, grep, echo, head, tail), running scripts (python3, node, npx tsx, bash), git operations, package management (npm, pip), system commands (ls, find, curl), and any other shell command.",
+				Parameters: map[string]any{
+					"type": "object",
+					"properties": map[string]any{
+						"command": map[string]any{
+							"type":        "string",
+							"description": "The shell command to execute.",
+						},
+					},
+					"required": []string{"command"},
+				},
+			},
+		},
+		Exec: func(in string) (out string, e error) {
+			var params struct {
+				Command string `json:"command"`
+			}
+			if e = json.Unmarshal([]byte(in), &params); e != nil {
+				e = fmt.Errorf("failed to unmarshal bash arguments: %w (cleaned args: %s)", e, in)
+				return
+			}
+			return Bash(params.Command)
+		},
+		Prompt: `**bash(command)**: Universal tool for executing shell commands:
+- File operations: cat, grep, echo, head, tail, find, etc.
+- Script execution: python3, node, npx tsx, bash, etc.
+- Git operations: git status, git log, git diff, etc.
+- Package management: npm, pip, cargo, etc.
+  Use bash for virtually all operations including file I/O and script execution.
+
+**IMPORTANT Guidelines:**
+- When a skill asks you to "create a file", use: bash echo 'content' > file.txt
+- When a skill asks you to "read a file", use: bash cat file.txt
+- When a skill asks you to "search in files", use: bash grep 'pattern' file
+- Only execute scripts that are part of the skill's scripts directory
+`,
+	}
+}
 
 // Bash executes a shell command and returns its combined stdout and stderr.
 // This is the universal tool for:
