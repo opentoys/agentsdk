@@ -12,6 +12,9 @@ A minimized agent sdk that supports mcp and skills calls.
         APIBase:    os.Getenv("OPENAI_API_BASE"),
         Model:      os.Getenv("OPENAI_API_MODE"),
         Debug:      true,
+        BaseTools: map[string]*tool.Tool{  // 自定义工具函数
+			"bash": tool.DefineBashTool(),
+		},
     }
 
     agent, e := agentsdk.New(rcfg)
