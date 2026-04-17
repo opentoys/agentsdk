@@ -10,9 +10,9 @@ import (
 	"errors"
 	"fmt"
 
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/mcpgodebug"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/mcpgodebug"
 )
 
 // ID is a Request identifier, which is defined by the spec to be a string, integer, or null.

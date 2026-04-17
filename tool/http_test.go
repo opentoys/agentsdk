@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/opentoys/agentsdk/tool"
+	"git.myscrm.cn/xiaqb01/agentsdk/tool"
 )
 
 func TestHttp(t *testing.T) {

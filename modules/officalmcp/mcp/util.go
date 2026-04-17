@@ -7,7 +7,7 @@ package mcp
 import (
 	"encoding/json"
 
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
 )
 
 func assert(cond bool, msg string) {

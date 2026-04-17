@@ -15,10 +15,10 @@ import (
 	"os"
 	"sync"
 
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/xcontext"
-	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/xcontext"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
 )
 
 // ErrConnectionClosed is returned when sending a message to a connection that

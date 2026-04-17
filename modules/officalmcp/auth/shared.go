@@ -12,7 +12,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
 )
 
 // GetAuthServerMetadata fetches authorization server metadata for the given issuer URL.

@@ -15,9 +15,9 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
-	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/util"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
 )
 
 // This file implements support for SSE (HTTP with server-sent events)

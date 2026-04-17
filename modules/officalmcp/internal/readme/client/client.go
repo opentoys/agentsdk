@@ -10,7 +10,7 @@ import (
 	"log"
 	"os/exec"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/mcp"
 )
 
 func main() {

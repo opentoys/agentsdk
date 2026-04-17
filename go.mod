@@ -1,4 +1,4 @@
-module github.com/opentoys/agentsdk
+module git.myscrm.cn/xiaqb01/agentsdk
 
 go 1.23.0
 

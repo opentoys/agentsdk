@@ -15,8 +15,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/util"
 )
 
 type httpStatusError struct {

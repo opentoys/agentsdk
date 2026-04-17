@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
 )
 
 // needsLocalhostNet skips t if networking does not work for ports opened

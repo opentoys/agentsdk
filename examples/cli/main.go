@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/opentoys/agentsdk"
-	"github.com/opentoys/agentsdk/memory"
-	"github.com/opentoys/agentsdk/tool"
+	"git.myscrm.cn/xiaqb01/agentsdk"
+	"git.myscrm.cn/xiaqb01/agentsdk/memory"
+	"git.myscrm.cn/xiaqb01/agentsdk/tool"
 	"github.com/sashabaranov/go-openai"
 )
 

@@ -10,8 +10,8 @@ import (
 	"fmt"
 	"strings"
 
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
 	"github.com/google/jsonschema-go/jsonschema"
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
 )
 
 // A ToolHandler handles a call to tools/call.

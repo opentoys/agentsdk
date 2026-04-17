@@ -18,8 +18,8 @@ import (
 	"slices"
 	"testing"
 
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
-	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
 )
 
 type ClientInfo struct {

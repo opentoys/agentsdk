@@ -13,7 +13,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
 )
 
 // Binder builds a connection configuration.

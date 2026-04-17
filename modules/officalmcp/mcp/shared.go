@@ -22,10 +22,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/auth"
-	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
-	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/auth"
+	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
 )
 
 const (

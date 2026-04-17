@@ -15,7 +15,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
+	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/util"
 )
 
 // ProtectedResourceMetadata is the metadata for an OAuth 2.0 protected resource,
