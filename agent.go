@@ -47,8 +47,9 @@ type Config struct {
 	MCPServers    map[string]mcp.MCPServer
 	MCPMaxRetries int
 	Debug         bool
-	History       []openai.ChatCompletionMessage
-	BaseTools     map[string]*tool.Tool
+	History       []openai.ChatCompletionMessage // Defining historical messages
+	BaseTools     map[string]*tool.Tool          // Custom tool collection
+	AllowSkills   string                         // The skill name that is allowed to be called. Empty is not limited
 }
 
 // New creates and initializes a new Agent.
@@ -187,7 +188,9 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	sb.WriteString("User Request: " + "" + userPrompt + "" + "\n\n")
 	sb.WriteString("Available Skills:\n")
 	for name, skill := range skills {
-		sb.WriteString(fmt.Sprintf("- %s: %s\n", name, skill.Meta.Description))
+		if a.cfg.AllowSkills == "" || strings.Contains(a.cfg.AllowSkills, name) {
+			sb.WriteString(fmt.Sprintf("- %s: %s\n", name, skill.Meta.Description))
+		}
 	}
 	sb.WriteString("\nSelection Guidelines:\n")
 	sb.WriteString("- For pure mathematical calculations (arithmetic, trigonometry, logarithms, etc.), ALWAYS prefer 'calculator-skill' over spreadsheet skills\n")
