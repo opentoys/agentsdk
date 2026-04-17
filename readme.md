@@ -9,18 +9,14 @@ agentsdk/
 ├── agent.go                  # 核心入口：Agent 主逻辑（发现→选择→执行）
 ├── go.mod / go.sum           # 模块定义与依赖
 ├── readme.md                 # 本文档
-│
 ├── mcp/                      # MCP 客户端封装层
 │   ├── client.go             # 多服务器连接管理、工具获取、工具调用（含重试）
 │   └── config.go             # 配置结构定义 & JSON 加载
-│
 ├── memory/                   # 对话记忆摘要系统
 │   └── summarize.go          # LLM 驱动的多级对话压缩/摘要
-│
 ├── skill/                    # 技能包解析与工具生成
 │   ├── parser.go             # SKILL.md / skill.md 解析（Claude + OpenAI 双格式）
 │   └── tool_gen.go           # 从技能定义自动生成 OpenAI Tool 定义
-│
 ├── tool/                     # 内置工具集
 │   ├── types.go              # Tool 核心类型定义
 │   ├── http.go               # HTTP 请求工具 (curl 兼容)
@@ -29,11 +25,9 @@ agentsdk/
 │   ├── read.go               # 本地文件/目录读取工具
 │   ├── search.go             # Tavily 网络搜索工具
 │   └── http_test.go          # HTTP 工具测试
-│
 ├── examples/cli/             # CLI 示例程序
 │   ├── main.go               # 完整使用示例（含记忆持久化）
 │   └── xxx.json              # 示例历史消息 JSON
-│
 └── modules/officalmcp/       # Go MCP SDK (第三方库，内嵌)
     ├── mcp/                  # MCP 协议实现 (client/server/protocol/transport/sse/streamable)
     ├── auth/                 # 认证模块 (OAuth2/OIDC)
@@ -188,8 +182,6 @@ result, err := tool.Bash("ls -la")           // 默认 2 分钟超时
 result, err = tool.BashWithTimeout("sleep 5", 10*time.Second)  // 自定义超时
 ```
 
-````
-
 ##### HTTP 工具 (curl 兼容)
 
 解析 curl 命令字符串后发送 HTTP 请求，响应为 JSON 时自动美化输出。
@@ -266,7 +258,6 @@ summary, err := memory.BuildSummarize(ctx, summarizer, messages, opts)
 | **Plugin**   | Skill Package                         | 技能作为插件热发现、动态加载       |
 | **Pipeline** | 发现 → 选择 → 执行                    | Agent 的核心流水线                 |
 | **Adapter**  | MCP Client, curl.go                   | 将外部格式适配为统一的 OpenAI Tool |
-````
 
 ## 参考项目
 
