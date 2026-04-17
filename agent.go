@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/opentoys/agentsdk/mcp"
@@ -49,7 +50,7 @@ type Config struct {
 	Debug         bool
 	History       []openai.ChatCompletionMessage // Defining historical messages
 	BaseTools     map[string]*tool.Tool          // Custom tool collection
-	AllowSkills   string                         // The skill name that is allowed to be called. Empty is not limited
+	AllowSkills   []string                       // The skill name that is allowed to be called. Empty is not limited
 }
 
 // New creates and initializes a new Agent.
@@ -188,7 +189,7 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	sb.WriteString("User Request: " + "" + userPrompt + "" + "\n\n")
 	sb.WriteString("Available Skills:\n")
 	for name, skill := range skills {
-		if a.cfg.AllowSkills == "" || strings.Contains(a.cfg.AllowSkills, name) {
+		if len(a.cfg.AllowSkills) == 0 || slices.Contains(a.cfg.AllowSkills, name) {
 			sb.WriteString(fmt.Sprintf("- %s: %s\n", name, skill.Meta.Description))
 		}
 	}
