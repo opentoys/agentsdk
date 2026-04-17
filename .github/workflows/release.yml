@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate Changelog
+        id: changelog
+        env:
+          TAG: ${{ github.ref_name }}
+          REPO: ${{ github.repository }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # 获取上一个 tag（如果有）
+          PREV_TAG=$(git tag --sort=-v:refname --no-contains HEAD | head -1)
+          
+          if [ -n "$PREV_TAG" ]; then
+            RANGE="${PREV_TAG}..${TAG}"
+          else
+            RANGE="${TAG}"  # 首个 tag，取所有到该 tag 的提交
+          fi
+          
+          # 生成变更日志：提取 commit hash + message + author
+          CHANGELOG=$(git log "$RANGE" \
+            --pretty=format:"- %h **%s** (@%an)" \
+            --no-merges)
+          
+          # 写入输出供后续步骤使用
+          {
+            echo "changelog<<EOF"
+            echo "$CHANGELOG"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## Changes
+            
+            ${{ steps.changelog.outputs.changelog }}
+
+            ---
+            *Auto-generated release*
+          draft: false
+          prerelease: ${{ contains(github.ref_name, '-rc') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-alpha') }}
