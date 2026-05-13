@@ -9,8 +9,8 @@ import (
 	"fmt"
 	"maps"
 
-	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/mcpgodebug"
+	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/mcpgodebug"
 )
 
 // Optional annotations for the client. The client can use annotations to inform

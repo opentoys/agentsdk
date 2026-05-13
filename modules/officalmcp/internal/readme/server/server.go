@@ -9,7 +9,7 @@ import (
 	"context"
 	"log"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/mcp"
+	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
 )
 
 type Input struct {

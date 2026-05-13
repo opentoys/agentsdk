@@ -19,9 +19,9 @@ import (
 	"sort"
 	"strings"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/auth"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/mcp"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
+	"github.com/opentoys/agentsdk/modules/officalmcp/auth"
+	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
+	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 )
 
 // scenarioHandler is the function signature for all conformance test scenarios.

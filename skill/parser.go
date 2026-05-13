@@ -9,7 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/tool"
+	"github.com/opentoys/agentsdk/tool"
 	"github.com/sashabaranov/go-openai"
 	"gopkg.in/yaml.v3"
 )

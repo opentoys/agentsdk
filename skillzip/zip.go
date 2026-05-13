@@ -33,19 +33,19 @@ func ReadURL(url string) (r *zip.Reader, e error) {
 	return zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
 }
 
-type skillzip struct {
+type SkillZip struct {
 	data map[string]*zip.Reader
 }
 
-func NewSkillZip() *skillzip {
-	return &skillzip{data: make(map[string]*zip.Reader)}
+func New() *SkillZip {
+	return &SkillZip{data: make(map[string]*zip.Reader)}
 }
 
-func (s *skillzip) Add(name string, data *zip.Reader) {
+func (s *SkillZip) Add(name string, data *zip.Reader) {
 	s.data[name] = data
 }
 
-func (s *skillzip) Open(file string) (f fs.File, e error) {
+func (s *SkillZip) Open(file string) (f fs.File, e error) {
 	if file == "." {
 		return &dirFile{skillstat: &skillstat{name: "skills", mode: fs.ModeDir | 0555, idir: true}}, nil
 	}
@@ -61,7 +61,7 @@ func (s *skillzip) Open(file string) (f fs.File, e error) {
 	return r.Open(subPath)
 }
 
-func (s *skillzip) ReadDir(dir string) ([]fs.DirEntry, error) {
+func (s *SkillZip) ReadDir(dir string) ([]fs.DirEntry, error) {
 	if dir == "." {
 		entries := make([]fs.DirEntry, 0, len(s.data))
 		for name := range s.data {

@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/mcp"
+	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
 	"github.com/sashabaranov/go-openai"
 )
 

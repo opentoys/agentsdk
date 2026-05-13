@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
+	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 )
 
 // TokenExchangeConfig configures RFC 8693 token exchange support on a [FakeIdPServer].

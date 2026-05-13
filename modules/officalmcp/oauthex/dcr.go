@@ -16,7 +16,7 @@ import (
 	"net/http"
 	"time"
 
-	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
+	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
 )
 
 // ClientRegistrationMetadata represents the client metadata fields for the DCR POST request (RFC 7591).

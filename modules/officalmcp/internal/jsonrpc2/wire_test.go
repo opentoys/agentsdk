@@ -10,7 +10,7 @@ import (
 	"reflect"
 	"testing"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
 )
 
 func TestWireMessage(t *testing.T) {

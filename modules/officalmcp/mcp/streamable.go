@@ -30,13 +30,13 @@ import (
 	"sync/atomic"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/auth"
-	internaljson "git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/mcpgodebug"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/util"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/xcontext"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
+	"github.com/opentoys/agentsdk/modules/officalmcp/auth"
+	internaljson "github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/mcpgodebug"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/xcontext"
+	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
 )
 
 const (

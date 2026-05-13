@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/util"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
+	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
 	"github.com/yosida95/uritemplate/v3"
 )
 

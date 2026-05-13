@@ -10,9 +10,9 @@ import (
 	"slices"
 	"strings"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/mcp"
-	"git.myscrm.cn/xiaqb01/agentsdk/skill"
-	"git.myscrm.cn/xiaqb01/agentsdk/tool"
+	"github.com/opentoys/agentsdk/mcp"
+	"github.com/opentoys/agentsdk/skill"
+	"github.com/opentoys/agentsdk/tool"
 	openai "github.com/sashabaranov/go-openai"
 )
 

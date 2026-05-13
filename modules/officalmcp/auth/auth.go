@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
+	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 )
 
 // TokenInfo holds information from a bearer token.

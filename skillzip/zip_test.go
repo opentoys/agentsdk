@@ -22,20 +22,12 @@ func createTestZip(files map[string]string) *zip.Reader {
 }
 
 func TestWalkDir(t *testing.T) {
-	// base, e := os.Open("/Users/xiaqiubo/Downloads/weworkapi_golang-master-xml.zip")
-	buf, e := os.ReadFile("/Users/xiaqiubo/Desktop/test/go/messages/.codebuddy/skills/dzf.zip")
+	buf, e := os.ReadFile("xxx.zip")
 	fmt.Println(e)
-
-	// bytes.NewReader(buf)
-
-	// base, e := os.Open("/Users/xiaqiubo/Desktop/test/go/messages/.codebuddy/skills/dzf.zip")
-	// fmt.Println(e)
-	// n, e := base.Stat()
-	// fmt.Println(e)
-	dzf, e := zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
+	xxx, e := zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
 	fmt.Println(e)
-	sz := NewSkillZip()
-	sz.Add("dzf", dzf)
+	sz := New()
+	sz.Add("xxx", xxx)
 	sz.Add("skill-b", createTestZip(map[string]string{
 		"config.yaml": "key: value",
 	}))
@@ -57,5 +49,5 @@ func TestWalkDir(t *testing.T) {
 	}
 	fmt.Println("walked paths:", paths)
 
-	fmt.Println(fs.ReadFile(sz, "dzf/dzf/references/14获取配置信息.md"))
+	fmt.Println(fs.ReadFile(sz, "xxx/xxx/references/a.md"))
 }

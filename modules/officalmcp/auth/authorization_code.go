@@ -15,7 +15,7 @@ import (
 	"slices"
 	"strings"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
+	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 	"golang.org/x/oauth2"
 )
 

@@ -14,8 +14,8 @@ import (
 	"io"
 	"net/http"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/auth"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/oauthex"
+	"github.com/opentoys/agentsdk/modules/officalmcp/auth"
+	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 	"golang.org/x/oauth2"
 )
 

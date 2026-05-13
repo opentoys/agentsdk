@@ -16,10 +16,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/json"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/internal/jsonrpc2"
-	"git.myscrm.cn/xiaqb01/agentsdk/modules/officalmcp/jsonrpc"
 	"github.com/google/jsonschema-go/jsonschema"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/json"
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/jsonrpc2"
+	"github.com/opentoys/agentsdk/modules/officalmcp/jsonrpc"
 )
 
 // A Client is an MCP client, which may be connected to an MCP server
