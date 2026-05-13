@@ -33,6 +33,18 @@ func ReadURL(url string) (r *zip.Reader, e error) {
 	return zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
 }
 
+func CreateZip(content map[string]string) *zip.Reader {
+	var buf bytes.Buffer
+	w := zip.NewWriter(&buf)
+	for name, content := range content {
+		f, _ := w.Create(name)
+		f.Write([]byte(content))
+	}
+	w.Close()
+	r, _ := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	return r
+}
+
 type SkillZip struct {
 	data map[string]*zip.Reader
 }
