@@ -14,15 +14,16 @@ import (
 )
 
 func main() {
+	skillfs := os.DirFS(os.Getenv("SKILL_DIR"))
 	rcfg := &agentsdk.Config{
-		SkillsDir: os.Getenv("SKILL_DIR"),
+		SkillsDir: skillfs,
 		APIKey:    os.Getenv("OPENAI_API_KEY"),
 		APIBase:   os.Getenv("OPENAI_API_BASE"),
 		Model:     os.Getenv("OPENAI_API_MODE"),
 		Debug:     true,
 		BaseTools: map[string]*tool.Tool{
 			"http": tool.DefineHttpRequest(),
-			"read": tool.DefineReadLocal(),
+			"read": tool.DefineReadLocal(skillfs),
 		},
 	}
 
