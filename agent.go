@@ -500,6 +500,7 @@ func (a *Agent) executeToolCall(toolCall openai.ToolCall, scriptMap map[string]s
 			if err != nil {
 				return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, err)
 			}
+			return toolOutput, err
 		}
 		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}
