@@ -154,18 +154,18 @@ cfg := &agentsdk.Config{
 
 #### Config 结构体
 
-| 字段            | 类型                             | 必填 | 默认值 | 说明                     |
-| --------------- | -------------------------------- | ---- | ------ | ------------------------ |
-| `APIKey`        | string                           | 是   | -      | OpenAI API Key           |
-| `APIBase`       | string                           | 是   | -      | OpenAI API Base URL      |
-| `Model`         | string                           | 否   | gpt-4o | 模型名称                 |
+| 字段            | 类型                             | 必填 | 默认值 | 说明                                |
+| --------------- | -------------------------------- | ---- | ------ | ----------------------------------- |
+| `APIKey`        | string                           | 是   | -      | OpenAI API Key                      |
+| `APIBase`       | string                           | 是   | -      | OpenAI API Base URL                 |
+| `Model`         | string                           | 否   | gpt-4o | 模型名称                            |
 | `SkillsDir`     | `fs.FS`                          | 否   | nil    | 技能文件系统（支持任意 fs.FS 实现） |
-| `MCPServers`    | `map[string]mcp.MCPServer`       | 否   | nil    | MCP 服务器配置           |
-| `MCPMaxRetries` | int                              | 否   | 3      | MCP 工具调用最大重试次数 |
-| `Debug`         | bool                             | 否   | false  | 是否打印调试信息         |
-| `History`       | `[]openai.ChatCompletionMessage` | 否   | nil    | 初始消息历史             |
-| `BaseTools`     | `map[string]*tool.Tool`          | 否   | nil    | 自定义基础工具集合       |
-| `AllowSkills`   | `[]string`                       | 否   | nil    | 技能白名单（空为不限制） |
+| `MCPServers`    | `map[string]mcp.MCPServer`       | 否   | nil    | MCP 服务器配置                      |
+| `MCPMaxRetries` | int                              | 否   | 3      | MCP 工具调用最大重试次数            |
+| `Debug`         | bool                             | 否   | false  | 是否打印调试信息                    |
+| `History`       | `[]openai.ChatCompletionMessage` | 否   | nil    | 初始消息历史                        |
+| `BaseTools`     | `map[string]*tool.Tool`          | 否   | nil    | 自定义基础工具集合                  |
+| `AllowSkills`   | `[]string`                       | 否   | nil    | 技能白名单（空为不限制）            |
 
 #### 方法
 
@@ -197,11 +197,15 @@ cfg := &agentsdk.Config{
 }
 ```
 
-| 方法          | 签名                                           | 说明                     |
-| ------------- | ---------------------------------------------- | ------------------------ |
-| `NewMem`      | `NewMem(names ...string) *MemFS`               | 创建内存文件系统         |
-| `WriteFile`   | `(m *MemFS) WriteFile(name string, data []byte) error` | 写入文件（自动创建目录） |
-| `Remove`      | `(m *MemFS) Remove(name string) error`         | 删除文件                 |
+| 方法        | 签名                                                    | 说明                     |
+| ----------- | ------------------------------------------------------- | ------------------------ |
+| `NewMem`    | `NewMem(names ...string) *MemFS`                        | 创建内存文件系统         |
+| `Open`      | `(m *MemFS) Open(name string) (fs.File, error)`         | 打开文件/目录            |
+| `ReadDir`   | `(m *MemFS) ReadDir(dir string) ([]fs.DirEntry, error)` | 读取目录                 |
+| `WriteFile` | `(m *MemFS) WriteFile(name string, data []byte) error`  | 写入文件（自动创建目录） |
+| `Remove`    | `(m *MemFS) Remove(name string) error`                  | 删除文件                 |
+| `Export`    | `(m *MemFS) Export(buf io.Writer) error`                | 导出 zip 文件            |
+| `Merge`     | `(m *MemFS) Merge(prefix string, sub fs.FS) (e error)`  | 合并 FS                  |
 
 #### ZipFS — ZIP 文件系统
 
@@ -218,13 +222,13 @@ cfg := &agentsdk.Config{
 }
 ```
 
-| 方法          | 签名                                          | 说明                     |
-| ------------- | --------------------------------------------- | ------------------------ |
-| `NewZip`      | `NewZip() *ZipFS`                             | 创建 ZIP 文件系统        |
-| `ZipReadFile` | `ZipReadFile(name string) (*zip.Reader, error)` | 从本地文件读取 ZIP      |
-| `ZipReadURL`  | `ZipReadURL(url string) (*zip.Reader, error)`   | 从 URL 下载并读取 ZIP   |
-| `ZipCreate`   | `ZipCreate(content map[string]string) *zip.Reader` | 从内存 map 创建 ZIP   |
-| `Add`         | `(z *ZipFS) Add(name string, data *zip.Reader)` | 注册 ZIP 到虚拟文件系统  |
+| 方法          | 签名                                               | 说明                    |
+| ------------- | -------------------------------------------------- | ----------------------- |
+| `NewZip`      | `NewZip() *ZipFS`                                  | 创建 ZIP 文件系统       |
+| `ZipReadFile` | `ZipReadFile(name string) (*zip.Reader, error)`    | 从本地文件读取 ZIP      |
+| `ZipReadURL`  | `ZipReadURL(url string) (*zip.Reader, error)`      | 从 URL 下载并读取 ZIP   |
+| `ZipCreate`   | `ZipCreate(content map[string]string) *zip.Reader` | 从内存 map 创建 ZIP     |
+| `Add`         | `(z *ZipFS) Add(name string, data *zip.Reader)`    | 注册 ZIP 到虚拟文件系统 |
 
 #### 使用 `os.DirFS` 加载本地目录
 
@@ -250,12 +254,12 @@ type Tool struct {
 
 #### 内置工具一览
 
-| 工具名          | 创建函数                          | 功能说明            | 安全特性                 |
-| --------------- | --------------------------------- | ------------------- | ------------------------ |
-| `bash`          | `DefineBashTool()`                | Shell 命令执行      | 危险命令拦截 + 2分钟超时 |
-| `http_request`  | `DefineHttpRequest()`             | curl 兼容 HTTP 请求 | JSON 自动美化输出        |
-| `read_local`    | `DefineReadLocal(fsys fs.FS)`     | 文件/目录读取       | 基于 fs.FS，支持任意文件系统 |
-| `tavily_search` | `DefineTavilySearch()`            | Tavily AI 搜索      | 默认上限 20 条           |
+| 工具名          | 创建函数                      | 功能说明            | 安全特性                     |
+| --------------- | ----------------------------- | ------------------- | ---------------------------- |
+| `bash`          | `DefineBashTool()`            | Shell 命令执行      | 危险命令拦截 + 2分钟超时     |
+| `http_request`  | `DefineHttpRequest()`         | curl 兼容 HTTP 请求 | JSON 自动美化输出            |
+| `read_local`    | `DefineReadLocal(fsys fs.FS)` | 文件/目录读取       | 基于 fs.FS，支持任意文件系统 |
+| `tavily_search` | `DefineTavilySearch()`        | Tavily AI 搜索      | 默认上限 20 条               |
 
 ##### Bash 工具
 
