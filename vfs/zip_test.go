@@ -1,4 +1,4 @@
-package skillzip
+package vfs
 
 import (
 	"archive/zip"
@@ -26,7 +26,7 @@ func TestWalkDir(t *testing.T) {
 	fmt.Println(e)
 	xxx, e := zip.NewReader(bytes.NewReader(buf), int64(len(buf)))
 	fmt.Println(e)
-	sz := New()
+	sz := NewZip()
 	sz.Add("xxx", xxx)
 	sz.Add("skill-b", createTestZip(map[string]string{
 		"config.yaml": "key: value",

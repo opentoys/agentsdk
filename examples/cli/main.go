@@ -7,23 +7,25 @@ import (
 	"os"
 	"time"
 
-	"git.myscrm.cn/xiaqb01/agentsdk"
-	"git.myscrm.cn/xiaqb01/agentsdk/memory"
-	"git.myscrm.cn/xiaqb01/agentsdk/tool"
+	"github.com/opentoys/agentsdk"
+	"github.com/opentoys/agentsdk/memory"
+	"github.com/opentoys/agentsdk/tool"
+	"github.com/opentoys/agentsdk/vfs"
 	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
-	skillfs := os.DirFS(os.Getenv("SKILL_DIR"))
+	mem := vfs.NewMem()
+	mem.WriteFile("xxx/SKILL.md", []byte("hello"))
 	rcfg := &agentsdk.Config{
-		SkillsDir: skillfs,
+		SkillsDir: mem,
 		APIKey:    os.Getenv("OPENAI_API_KEY"),
 		APIBase:   os.Getenv("OPENAI_API_BASE"),
 		Model:     os.Getenv("OPENAI_API_MODE"),
 		Debug:     true,
 		BaseTools: map[string]*tool.Tool{
 			"http": tool.DefineHttpRequest(),
-			"read": tool.DefineReadLocal(skillfs),
+			"read": tool.DefineReadLocal(mem),
 		},
 	}
 
