@@ -158,16 +158,16 @@ func parseOpenAISkill(skillDir string, data []byte) (SkillMeta, string, error) {
 }
 
 // findResourceFiles finds all files in the specified resource directory
-func findResourceFiles(skillPath, resourceDir string) ([]string, error) {
+func findResourceFiles(root fs.FS, skillPath, resourceDir string) ([]string, error) {
 	var files []string
 	scanDir := filepath.Join(skillPath, resourceDir)
 
 	// Check if directory exists
-	if _, err := os.Stat(scanDir); os.IsNotExist(err) {
+	if _, err := fs.Stat(root, scanDir); os.IsNotExist(err) {
 		return files, nil // Directory does not exist, return empty list, no error
 	}
 
-	err := filepath.WalkDir(scanDir, func(path string, d fs.DirEntry, err error) error {
+	err := fs.WalkDir(root, scanDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
@@ -186,8 +186,8 @@ func findResourceFiles(skillPath, resourceDir string) ([]string, error) {
 }
 
 // ParseSkillPackage finely parses the Skill package in the given directory path
-func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
-	info, err := os.Stat(dirPath)
+func ParseSkillPackage(root fs.FS, dirPath string) (*SkillPackage, error) {
+	info, err := fs.Stat(root, dirPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return nil, fmt.Errorf("skill directory not found: %s", dirPath)
@@ -204,7 +204,7 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 	var mdContent []byte
 
 	// Check what files actually exist (to handle case-insensitive filesystems)
-	entries, err := os.ReadDir(dirPath)
+	entries, err := fs.ReadDir(root, dirPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read skill directory: %w", err)
 	}
@@ -214,10 +214,10 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 
 	for _, entry := range entries {
 		if !entry.IsDir() {
-			name := entry.Name()
-			if name == "SKILL.md" {
+			switch entry.Name() {
+			case "SKILL.md":
 				hasClaudeSkill = true
-			} else if name == "skill.md" {
+			case "skill.md":
 				hasOpenAISkill = true
 			}
 		}
@@ -226,7 +226,7 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 	if hasClaudeSkill {
 		// Claude skill format with frontmatter
 		skillMdPath := filepath.Join(dirPath, "SKILL.md")
-		mdContent, err = os.ReadFile(skillMdPath)
+		mdContent, err = fs.ReadFile(root, skillMdPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read SKILL.md: %w", err)
 		}
@@ -237,7 +237,7 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 	} else if hasOpenAISkill {
 		// OpenAI skill format without frontmatter
 		skillMdPath := filepath.Join(dirPath, "skill.md")
-		mdContent, err = os.ReadFile(skillMdPath)
+		mdContent, err = fs.ReadFile(root, skillMdPath)
 		if err != nil {
 			return nil, fmt.Errorf("failed to read skill.md: %w", err)
 		}
@@ -250,19 +250,19 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 	}
 
 	// 2. Find resource files
-	scripts, err := findResourceFiles(dirPath, "scripts")
+	scripts, err := findResourceFiles(root, dirPath, "scripts")
 	if err != nil {
 		return nil, fmt.Errorf("error scanning 'scripts' directory: %w", err)
 	}
-	references, err := findResourceFiles(dirPath, "references")
+	references, err := findResourceFiles(root, dirPath, "references")
 	if err != nil {
 		return nil, fmt.Errorf("error scanning 'references' directory: %w", err)
 	}
-	assets, err := findResourceFiles(dirPath, "assets")
+	assets, err := findResourceFiles(root, dirPath, "assets")
 	if err != nil {
 		return nil, fmt.Errorf("error scanning 'assets' directory: %w", err)
 	}
-	templates, err := findResourceFiles(dirPath, "templates")
+	templates, err := findResourceFiles(root, dirPath, "templates")
 	if err != nil {
 		return nil, fmt.Errorf("error scanning 'templates' directory: %w", err)
 	}
@@ -287,29 +287,24 @@ func ParseSkillPackage(dirPath string) (*SkillPackage, error) {
 // A directory is considered a skill package if it contains either a SKILL.md (Claude) or skill.md (OpenAI) file.
 // It returns a slice of successfully parsed SkillPackage objects.
 
-func ParseSkillPackages(rootDir string) ([]*SkillPackage, error) {
+func ParseSkillPackages(root fs.FS) (skills []*SkillPackage, e error) {
 	skillDirs := make(map[string]struct{})
-
-	walkErr := filepath.WalkDir(rootDir, func(path string, d fs.DirEntry, err error) error {
+	walkErr := fs.WalkDir(root, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
-
 		if !d.IsDir() && (d.Name() == "SKILL.md" || d.Name() == "skill.md") {
-			dir := filepath.Dir(path)
-			skillDirs[dir] = struct{}{}
+			skillDirs[filepath.Dir(path)] = struct{}{}
 		}
-
 		return nil
 	})
-
 	if walkErr != nil {
-		return nil, fmt.Errorf("error walking directory %s: %w", rootDir, walkErr)
+		return nil, fmt.Errorf("error walking directory: %w", walkErr)
 	}
 
 	var packages []*SkillPackage
 	for dir := range skillDirs {
-		pkg, err := ParseSkillPackage(dir)
+		pkg, err := ParseSkillPackage(root, dir)
 		if err == nil {
 			packages = append(packages, pkg)
 		}

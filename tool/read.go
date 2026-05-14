@@ -3,6 +3,7 @@ package tool
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -10,7 +11,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
-func DefineReadLocal() *Tool {
+func DefineReadLocal(dirs ...fs.FS) *Tool {
 	return &Tool{
 		Define: openai.Tool{
 			Type: openai.ToolTypeFunction,
@@ -37,6 +38,12 @@ func DefineReadLocal() *Tool {
 				e = fmt.Errorf("failed to unmarshal bash arguments: %w (cleaned args: %s)", e, in)
 				return
 			}
+			for _, v := range dirs {
+				rw, _ := ReadFS(v, params.Path)
+				if rw != "" {
+					return rw, nil
+				}
+			}
 			return ReadLocal(params.Path)
 		},
 		Prompt: `**read(path)**: Provides file and folder reading functions
@@ -44,6 +51,33 @@ func DefineReadLocal() *Tool {
 
 `,
 	}
+}
+
+func ReadFS(root fs.FS, path string) (rw string, e error) {
+	f, e := fs.Stat(root, path)
+	if e != nil {
+		return "", e
+	}
+	if f.IsDir() {
+		ents, e := fs.ReadDir(root, path)
+		if e != nil {
+			return "", e
+		}
+		var sw strings.Builder
+		for _, v := range ents {
+			if v.IsDir() {
+				sw.WriteString(fmt.Sprintf("dir: %s\n", v.Name()))
+			} else {
+				f, _ := v.Info()
+				sw.WriteString(fmt.Sprintf("file: %s	size: %d	modification: %s	\n", v.Name(), f.Size(), f.ModTime()))
+			}
+		}
+		return sw.String(), nil
+	}
+
+	buf, e := fs.ReadFile(root, path)
+	rw = string(buf)
+	return
 }
 
 func ReadLocal(path string) (rw string, e error) {

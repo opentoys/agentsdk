@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/fs"
 	"os"
 	"slices"
 	"strings"
@@ -44,7 +45,7 @@ type Config struct {
 	APIKey        string
 	APIBase       string
 	Model         string
-	SkillsDir     string
+	SkillsDir     fs.FS
 	MCPServers    map[string]mcp.MCPServer
 	MCPMaxRetries int
 	Debug         bool
@@ -168,8 +169,8 @@ func getAvailableSkillNames(skills map[string]skill.SkillPackage) []string {
 	return names
 }
 
-func (a *Agent) discoverSkills(skillsRoot string) (map[string]skill.SkillPackage, error) {
-	packages, err := skill.ParseSkillPackages(skillsRoot)
+func (a *Agent) discoverSkills(vfs fs.FS) (map[string]skill.SkillPackage, error) {
+	packages, err := skill.ParseSkillPackages(vfs)
 	if err != nil {
 		return nil, err
 	}
@@ -499,6 +500,7 @@ func (a *Agent) executeToolCall(toolCall openai.ToolCall, scriptMap map[string]s
 			if err != nil {
 				return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, err)
 			}
+			return toolOutput, err
 		}
 		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}
