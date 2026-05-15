@@ -8,8 +8,9 @@ package json
 
 import (
 	"bytes"
-	"encoding/json"
 	"io"
+
+	"encoding/json"
 )
 
 type Decoder struct {

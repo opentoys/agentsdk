@@ -22,9 +22,9 @@ func main() {
 		APIKey:    os.Getenv("OPENAI_API_KEY"),
 		APIBase:   os.Getenv("OPENAI_API_BASE"),
 		Model:     os.Getenv("OPENAI_API_MODE"),
-		Debug:     true,
+		Debug:     &agentsdk.DefaultLog{},
 		BaseTools: map[string]*tool.Tool{
-			"http": tool.DefineHttpRequest(),
+			"bash": tool.DefineBashTool(),
 			"read": tool.DefineReadLocal(mem),
 		},
 	}

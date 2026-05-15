@@ -15,6 +15,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/opentoys/agentsdk/modules/officalmcp/internal/util"
 	"github.com/opentoys/agentsdk/modules/officalmcp/oauthex"
 	"golang.org/x/oauth2"
 )
@@ -34,6 +35,10 @@ type ClientIDMetadataDocumentConfig struct {
 type DynamicClientRegistrationConfig struct {
 	// Metadata to be used in dynamic client registration request as per
 	// https://datatracker.ietf.org/doc/html/rfc7591#section-2.
+	//
+	// If Metadata.ApplicationType is empty, it will be inferred from
+	// Metadata.RedirectURIs. When set, it will be validated against the inferred type
+	// and an error will be returned if they conflict.
 	Metadata *oauthex.ClientRegistrationMetadata
 }
 
@@ -84,6 +89,23 @@ type AuthorizationCodeHandlerConfig struct {
 	// AuthorizationCodeFetcher is a required function called to initiate the authorization flow.
 	// See [AuthorizationCodeFetcher] for details.
 	AuthorizationCodeFetcher AuthorizationCodeFetcher
+
+	// RequestRefreshToken indicates that the client intends to use refresh
+	// tokens and is capable of storing them securely.
+	//
+	// When true and the Authorization Server metadata contains "offline_access"
+	// in its scopes_supported, the client adds "offline_access" to the
+	// requested scopes.
+	//
+	// When using Dynamic Client Registration, callers should include
+	// "refresh_token" in [DynamicClientRegistrationConfig].Metadata.GrantTypes
+	// directly to advertise refresh token support to the Authorization Server.
+	//
+	// When using Client ID Metadata Document, the document hosted at the
+	// Client ID URL should include "refresh_token" in its grant_types.
+	//
+	// See https://modelcontextprotocol.io/seps/2207-oidc-refresh-token-guidance.
+	RequestRefreshToken bool
 
 	// Client is an optional HTTP client to use for HTTP requests.
 	// It is used for the following requests:
@@ -150,6 +172,12 @@ func NewAuthorizationCodeHandler(config *AuthorizationCodeHandlerConfig) (*Autho
 		} else if !slices.Contains(dCfg.Metadata.RedirectURIs, config.RedirectURL) {
 			return nil, fmt.Errorf("RedirectURL %q is not in the list of allowed redirect URIs for dynamic client registration", config.RedirectURL)
 		}
+		applicationType := inferApplicationType(dCfg.Metadata.RedirectURIs)
+		if dCfg.Metadata.ApplicationType == "" {
+			dCfg.Metadata.ApplicationType = applicationType
+		} else if dCfg.Metadata.ApplicationType != applicationType {
+			return nil, fmt.Errorf("application type %q conflicts with the application type inferred from redirect URIs", dCfg.Metadata.ApplicationType)
+		}
 	}
 	if config.RedirectURL == "" {
 		// If the RedirectURL was supposed to be set by the dynamic client registration,
@@ -168,6 +196,36 @@ func isNonRootHTTPSURL(u string) bool {
 		return false
 	}
 	return pu.Scheme == "https" && pu.Path != ""
+}
+
+// inferApplicationType returns an application type based on the redirect URIs.
+func inferApplicationType(redirectURIs []string) string {
+	hasNative := false
+	hasWeb := false
+	for _, uri := range redirectURIs {
+		u, err := url.Parse(uri)
+		if err != nil {
+			return ""
+		}
+		switch u.Scheme {
+		case "http", "https":
+			if util.IsLoopback(u.Hostname()) {
+				hasNative = true
+			} else {
+				hasWeb = true
+			}
+		default:
+			hasNative = true
+		}
+	}
+
+	if hasNative && hasWeb {
+		return ""
+	}
+	if hasNative {
+		return "native"
+	}
+	return "web"
 }
 
 // Authorize performs the authorization flow.
@@ -220,6 +278,14 @@ func (h *AuthorizationCodeHandler) Authorize(ctx context.Context, req *http.Requ
 	scps := scopesFromChallenges(wwwChallenges)
 	if len(scps) == 0 && len(prm.ScopesSupported) > 0 {
 		scps = prm.ScopesSupported
+	}
+
+	// SEP-2207: when the client desires refresh tokens and the Authorization
+	// Server advertises offline_access support, add it to the requested scopes.
+	if h.config.RequestRefreshToken &&
+		slices.Contains(asm.ScopesSupported, "offline_access") &&
+		!slices.Contains(scps, "offline_access") {
+		scps = append(scps, "offline_access")
 	}
 
 	cfg := &oauth2.Config{
