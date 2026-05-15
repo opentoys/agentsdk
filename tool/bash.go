@@ -2,6 +2,7 @@ package tool
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -31,7 +32,7 @@ func DefineBashTool() types.Tool {
 				"required": []string{"command"},
 			},
 		},
-		Exec: func(in string) (out string, e error) {
+		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
 				Command string `json:"command"`
 			}

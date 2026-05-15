@@ -14,10 +14,10 @@ type ClientSessioner interface {
 }
 
 type Tool struct {
-	Prompt   string                                `json:"-"`
-	Type     string                                `json:"type"`
-	Function *FunctionDefinition                   `json:"function,omitempty"`
-	Exec     func(in string) (out string, e error) `json:"-"`
+	Prompt   string                                                     `json:"-"`
+	Type     string                                                     `json:"type"`
+	Function *FunctionDefinition                                        `json:"function,omitempty"`
+	Exec     func(ctx context.Context, in string) (out string, e error) `json:"-"`
 }
 
 type FunctionDefinition struct {

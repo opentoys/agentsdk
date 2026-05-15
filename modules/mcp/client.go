@@ -22,26 +22,23 @@ type Client struct {
 }
 
 // NewClient creates a new MCP client and connects to the servers defined in the config.
-func NewClient(ctx context.Context, config *Config) (*Client, error) {
+func NewClient(ctx context.Context, config *Config) *Client {
 	maxRetries := config.MaxRetries
 	if maxRetries <= 0 {
 		maxRetries = 3 // Default to 3 retries
 	}
-
 	c := &Client{
 		sessions:   make(map[string]*mcp.ClientSession),
 		config:     config,
 		maxRetries: maxRetries,
 	}
-
 	for name, server := range config.MCPServers {
 		if err := c.connectToServer(ctx, name, server); err != nil {
 			// Log error but continue connecting to other servers
 			fmt.Fprintf(os.Stderr, "Failed to connect to MCP server %s: %v\n", name, err)
 		}
 	}
-
-	return c, nil
+	return c
 }
 
 func (c *Client) connectToServer(ctx context.Context, name string, server MCPServer) error {

@@ -327,7 +327,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 					}
 				}
 			} else {
-				toolOutput, err = a.executeToolCall(tc, scriptMap, skillp.Path)
+				toolOutput, err = a.executeToolCall(ctx, tc, scriptMap, skillp.Path)
 			}
 
 			if err != nil {
@@ -402,7 +402,7 @@ func cleanToolArguments(args string) string {
 	return strings.TrimSpace(args)
 }
 
-func (a *Agent) executeToolCall(toolCall types.ToolCall, scriptMap map[string]string, skillPath string) (string, error) {
+func (a *Agent) executeToolCall(ctx context.Context, toolCall types.ToolCall, scriptMap map[string]string, skillPath string) (string, error) {
 	var toolOutput string
 	var err error
 	// Set workdir if skillPath is available
@@ -451,7 +451,7 @@ func (a *Agent) executeToolCall(toolCall types.ToolCall, scriptMap map[string]st
 		}
 		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}
-	toolOutput, err = exec.Exec(cleanedArgs)
+	toolOutput, err = exec.Exec(ctx, cleanedArgs)
 	if err != nil {
 		return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, err)
 	}

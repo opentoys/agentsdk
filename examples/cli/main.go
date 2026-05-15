@@ -10,23 +10,23 @@ import (
 	"github.com/opentoys/agentsdk"
 	"github.com/opentoys/agentsdk/memory"
 	"github.com/opentoys/agentsdk/modules/aichat"
+	"github.com/opentoys/agentsdk/modules/mcp"
 	"github.com/opentoys/agentsdk/tool"
 	"github.com/opentoys/agentsdk/types"
 	"github.com/opentoys/agentsdk/vfs"
 )
 
 func main() {
-	chat := aichat.NewOpenAI(
-		aichat.WithOpenAIKey(os.Getenv("OPENAI_API_KEY")),
-		aichat.WithOpenAIBase(os.Getenv("OPENAI_API_BASE")),
-		aichat.WithOpenAIModel(os.Getenv("OPENAI_API_MODE")),
-	)
-
 	mem := vfs.NewMem()
 	mem.WriteFile("xxx/SKILL.md", []byte("hello"))
 	rcfg := &agentsdk.Config{
-		SkillsDir:  os.DirFS(os.Getenv("SKILL_DIR")),
-		ChatClient: chat,
+		SkillsDir: os.DirFS(os.Getenv("SKILL_DIR")),
+		ChatClient: aichat.NewOpenAI(
+			aichat.WithOpenAIKey(os.Getenv("OPENAI_API_KEY")),
+			aichat.WithOpenAIBase(os.Getenv("OPENAI_API_BASE")),
+			aichat.WithOpenAIModel(os.Getenv("OPENAI_API_MODE")),
+		),
+		McpServers: mcp.NewClient(context.Background(), &mcp.Config{}),
 		Debug:      &agentsdk.DefaultLog{},
 		BaseTools: map[string]types.Tool{
 			"bash": tool.DefineBashTool(),

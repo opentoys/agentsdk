@@ -30,7 +30,7 @@ func DefineTavilySearch() types.Tool {
 				"required": []string{"query"},
 			},
 		},
-		Exec: func(in string) (out string, e error) {
+		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
 				Query string `json:"query"`
 			}
@@ -38,7 +38,7 @@ func DefineTavilySearch() types.Tool {
 				e = fmt.Errorf("failed to unmarshal tavily_search arguments: %w (cleaned args: %s)", e, in)
 				return
 			}
-			return TavilySearch(params.Query)
+			return TavilySearch(ctx, params.Query)
 		},
 		Prompt: `**tavily_search(query)**: Perform web search using the Tavily API.
   Use when you need to search the web for current information.
@@ -47,17 +47,17 @@ func DefineTavilySearch() types.Tool {
 }
 
 // TavilySearch performs a web search using the Tavily API.
-func TavilySearch(query string) (string, error) {
-	return TavilySearchWithLimit(query, 20)
+func TavilySearch(ctx context.Context, query string) (string, error) {
+	return TavilySearchWithLimit(ctx, query, 20)
 }
 
 // TavilySearchWithLimit performs a web search using the Tavily API with a custom result limit.
-func TavilySearchWithLimit(query string, maxResults int) (string, error) {
-	return TavilySearchWithLimitAndURL(query, maxResults, "https://api.tavily.com/search")
+func TavilySearchWithLimit(ctx context.Context, query string, maxResults int) (string, error) {
+	return TavilySearchWithLimitAndURL(ctx, query, maxResults, "https://api.tavily.com/search")
 }
 
 // TavilySearchWithLimitAndURL performs a web search using the Tavily API with a custom result limit and URL (for testing).
-func TavilySearchWithLimitAndURL(query string, maxResults int, apiURL string) (string, error) {
+func TavilySearchWithLimitAndURL(ctx context.Context, query string, maxResults int, apiURL string) (string, error) {
 	apiKey := os.Getenv("TAVILY_API_KEY")
 	if apiKey == "" {
 		return "", fmt.Errorf("TAVILY_API_KEY environment variable is not set")
@@ -80,7 +80,7 @@ func TavilySearchWithLimitAndURL(query string, maxResults int, apiURL string) (s
 		return "", fmt.Errorf("failed to marshal request body: %w", err)
 	}
 
-	req, err := http.NewRequestWithContext(context.Background(), "POST", apiURL, bytes.NewBuffer(requestBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", apiURL, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return "", fmt.Errorf("failed to create request: %w", err)
 	}

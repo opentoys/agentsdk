@@ -1,6 +1,7 @@
 package tool
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/fs"
@@ -26,7 +27,7 @@ func DefineReadLocal(dirs ...fs.FS) types.Tool {
 				"required": []string{"path"},
 			},
 		},
-		Exec: func(in string) (out string, e error) {
+		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
 				Path string `json:"path"`
 			}
