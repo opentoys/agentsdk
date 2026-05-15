@@ -5,15 +5,14 @@ import (
 	"path/filepath"
 	"strings"
 
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 )
 
 // GenerateToolDefinitions generates the list of OpenAI tools for a given skill.
 // It returns the tool definitions and a map of tool names to script paths for execution.
 // 优先使用 SKILL.md 中定义的工具，如果未定义则自动生成。
-func GenerateToolDefinitions(skill *SkillPackage) ([]openai.Tool, map[string]string) {
-	var tools []openai.Tool
-	scriptMap := make(map[string]string)
+func GenerateToolDefinitions(skill *SkillPackage) (tools []types.Tool, scriptMap map[string]string) {
+	scriptMap = make(map[string]string)
 
 	// 1. Base Tools
 	if len(skill.Meta.AllowedTools) > 0 {
@@ -54,7 +53,7 @@ func GenerateToolDefinitions(skill *SkillPackage) ([]openai.Tool, map[string]str
 }
 
 // generateToolFromDefinition 从 SKILL.md 中的工具定义生成 OpenAI 工具
-func generateToolFromDefinition(skillPath string, scripts []string, toolDef ToolDefinition) (openai.Tool, string) {
+func generateToolFromDefinition(skillPath string, scripts []string, toolDef ToolDefinition) (types.Tool, string) {
 	// 确定脚本路径
 	var scriptPath string
 	if toolDef.Script != "" {
@@ -120,9 +119,9 @@ func generateToolFromDefinition(skillPath string, scripts []string, toolDef Tool
 		description = fmt.Sprintf("Executes tool '%s'", toolDef.Name)
 	}
 
-	return openai.Tool{
-		Type: openai.ToolTypeFunction,
-		Function: &openai.FunctionDefinition{
+	return types.Tool{
+		Type: types.ToolTypeFunction,
+		Function: &types.FunctionDefinition{
 			Name:        toolDef.Name,
 			Description: description,
 			Parameters:  parameters,
@@ -135,7 +134,7 @@ func GetToolDefinitions(skill *SkillPackage) []ToolDefinition {
 	return skill.Meta.Tools
 }
 
-func generateScriptTool(skillPath, scriptRelPath string) (openai.Tool, string) {
+func generateScriptTool(skillPath, scriptRelPath string) (types.Tool, string) {
 	// Normalize name: replace non-alphanumeric with underscore
 	safeName := strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
@@ -154,9 +153,9 @@ func generateScriptTool(skillPath, scriptRelPath string) (openai.Tool, string) {
 		description = fmt.Sprintf("Executes the shell script '%s'.", scriptRelPath)
 	}
 
-	return openai.Tool{
-		Type: openai.ToolTypeFunction,
-		Function: &openai.FunctionDefinition{
+	return types.Tool{
+		Type: types.ToolTypeFunction,
+		Function: &types.FunctionDefinition{
 			Name:        toolName,
 			Description: description,
 			Parameters: map[string]any{

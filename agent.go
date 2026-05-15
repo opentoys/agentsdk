@@ -9,66 +9,39 @@ import (
 	"os"
 	"strings"
 
-	"github.com/opentoys/agentsdk/mcp"
 	"github.com/opentoys/agentsdk/skill"
 	"github.com/opentoys/agentsdk/tool"
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 )
-
-// OpenAIChatClient interface for dependency injection and testing
-type OpenAIChatClient interface {
-	CreateChatCompletion(ctx context.Context, req openai.ChatCompletionRequest) (openai.ChatCompletionResponse, error)
-}
 
 // Agent manages the skill discovery, selection, and execution process.
 type Agent struct {
-	client    OpenAIChatClient
+	client    types.OpenAIChatClient
 	cfg       *Config
-	messages  []openai.ChatCompletionMessage // Stores the conversation history
-	mcpClient *mcp.Client
+	messages  []types.ChatCompletionMessage // Stores the conversation history
+	mcpClient types.ClientSessioner
 }
 
 // Config holds all the necessary configuration for the runner.
 type Config struct {
-	APIKey        string
-	APIBase       string
-	Model         string
-	SkillsDir     fs.FS
-	MCPServers    map[string]mcp.MCPServer
-	MCPMaxRetries int
-	Debug         Logger
-	History       []openai.ChatCompletionMessage // Defining historical messages
-	BaseTools     map[string]*tool.Tool          // Custom tool collection
+	ChatClient types.OpenAIChatClient
+	SkillsDir  fs.FS
+	Debug      Logger
+	McpServers types.ClientSessioner
+	History    []types.ChatCompletionMessage // Defining historical messages
+	BaseTools  map[string]types.Tool         // Custom tool collection
 }
 
 // New creates and initializes a new Agent.
 func New(cfg *Config) (a *Agent, e error) {
-	if cfg.APIKey == "" {
+	if cfg.ChatClient == nil {
 		return nil, errors.New("API key is not set")
 	}
-	if cfg.Model == "" {
-		cfg.Model = "gpt-4o" // Default model
-	}
-
-	mcpClient, e := mcp.NewClient(context.Background(), &mcp.Config{
-		MCPServers: cfg.MCPServers,
-		MaxRetries: cfg.MCPMaxRetries,
-	})
-	if e != nil {
-		return
-	}
-
-	openaiConfig := openai.DefaultConfig(cfg.APIKey)
-	if cfg.APIBase != "" {
-		openaiConfig.BaseURL = cfg.APIBase
-	}
-	client := openai.NewClientWithConfig(openaiConfig)
-
 	return &Agent{
-		client:    client,
+		client:    cfg.ChatClient,
 		cfg:       cfg,
 		messages:  cfg.History, // Initialize empty message history
-		mcpClient: mcpClient,
+		mcpClient: cfg.McpServers,
 	}, nil
 }
 
@@ -78,44 +51,43 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e erro
 	if err != nil {
 		return "", err
 	}
-	selectedSkill.BaseTools = tool.Tools(a.cfg.BaseTools).Base()
+	for _, v := range a.cfg.BaseTools {
+		selectedSkill.BaseTools = append(selectedSkill.BaseTools, v)
+	}
 	resp, e = a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
 	return
 }
 
 // Chat reuse all configurations, just reset context message
 func (a *Agent) Chat(ctx context.Context, prompt string) (content string, e error) {
-	req := openai.ChatCompletionRequest{
-		Model: a.cfg.Model,
-		Messages: []openai.ChatCompletionMessage{
+	req := types.ChatCompletionRequest{
+		Messages: []types.ChatCompletionMessage{
 			{
-				Role:    openai.ChatMessageRoleUser,
+				Role:    types.ChatMessageRoleUser,
 				Content: prompt,
 			},
 		},
 		Temperature: 0,
 	}
-	a.debugPrintRequest(ctx, req)
 	resp, err := a.client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	a.debugPrintResponse(ctx, resp)
 	content = resp.Choices[0].Message.Content
 	return
 }
 
 // Messages reuse all configurations, just reset context message
-func (a *Agent) Messages() (lst []openai.ChatCompletionMessage) {
+func (a *Agent) Messages() (lst []types.ChatCompletionMessage) {
 	return append(lst, a.messages...)
 }
 
 // NewChat reuse all configurations, just reset context message
-func (a *Agent) NewChat(history []openai.ChatCompletionMessage) (n *Agent) {
+func (a *Agent) NewChat(history []types.ChatCompletionMessage) (n *Agent) {
 	n = &Agent{
 		client:    a.client,
 		cfg:       a.cfg,
-		messages:  append([]openai.ChatCompletionMessage{}, history...),
+		messages:  append([]types.ChatCompletionMessage{}, history...),
 		mcpClient: a.mcpClient,
 	}
 	return
@@ -189,19 +161,18 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	skillPrompt := skill.SkillsToPrompt(skills, a.cfg.BaseTools)
 
 	// Use a temporary message history for skill selection
-	selectionMessages := []openai.ChatCompletionMessage{
+	selectionMessages := []types.ChatCompletionMessage{
 		{
-			Role:    openai.ChatMessageRoleSystem,
+			Role:    types.ChatMessageRoleSystem,
 			Content: "You are a skill selection assistant. Your ONLY job is to select the most appropriate skill from the available list. You must ALWAYS choose exactly one skill - never refuse to select or try to answer the question yourself.\n" + skillPrompt,
 		},
 		{
-			Role:    openai.ChatMessageRoleUser,
+			Role:    types.ChatMessageRoleUser,
 			Content: sb.String(),
 		},
 	}
 
-	req := openai.ChatCompletionRequest{
-		Model:       a.cfg.Model,
+	req := types.ChatCompletionRequest{
 		Messages:    selectionMessages,
 		Temperature: 0,
 	}
@@ -247,7 +218,7 @@ func extractSkillName(content string, skills map[string]skill.SkillPackage) stri
 }
 
 // debugPrintRequest prints the LLM request in debug mode
-func (a *Agent) debugPrintRequest(ctx context.Context, req openai.ChatCompletionRequest) {
+func (a *Agent) debugPrintRequest(ctx context.Context, req types.ChatCompletionRequest) {
 	if a.cfg.Debug == nil {
 		return
 	}
@@ -260,7 +231,7 @@ func (a *Agent) debugPrintRequest(ctx context.Context, req openai.ChatCompletion
 }
 
 // debugPrintResponse prints the LLM response in debug mode
-func (a *Agent) debugPrintResponse(ctx context.Context, resp openai.ChatCompletionResponse) {
+func (a *Agent) debugPrintResponse(ctx context.Context, resp types.ChatCompletionResponse) {
 	if a.cfg.Debug == nil {
 		return
 	}
@@ -284,8 +255,8 @@ func (a *Agent) executeSkillWithTools(ctx context.Context, userPrompt string, sk
 	skillBody.WriteString(skill.Body)
 	skillBody.WriteString("\n\n ## SKILL CONTEXT\n")
 	skillBody.WriteString(fmt.Sprintf("Skill Root Path: %s\n", skill.Path))
-	a.messages = append(a.messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleSystem,
+	a.messages = append(a.messages, types.ChatCompletionMessage{
+		Role:    types.ChatMessageRoleSystem,
 		Content: skillBody.String(),
 	})
 
@@ -294,8 +265,8 @@ func (a *Agent) executeSkillWithTools(ctx context.Context, userPrompt string, sk
 
 // continueSkillWithTools continues a conversation with a new user prompt.
 func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, skillp *skill.SkillPackage) (string, error) {
-	a.messages = append(a.messages, openai.ChatCompletionMessage{
-		Role:    openai.ChatMessageRoleUser,
+	a.messages = append(a.messages, types.ChatCompletionMessage{
+		Role:    types.ChatMessageRoleUser,
 		Content: userPrompt,
 	})
 
@@ -314,8 +285,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 	var finalResponse strings.Builder
 
 	for range 20 { // Limit to 20 iterations to prevent infinite loops
-		req := openai.ChatCompletionRequest{
-			Model:    a.cfg.Model,
+		req := types.ChatCompletionRequest{
 			Messages: a.messages, // Use agent's messages
 			Tools:    availableTools,
 		}
@@ -364,14 +334,14 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 				// Provide detailed error information to help LLM understand what went wrong
 				errorMsg := fmt.Sprintf("Tool execution failed: %s\nError details: %v\nTool name: %s\nArguments: %s\n\nYou can try:\n1. Retry with different parameters\n2. Use a different tool to fix it\n3. Modify your approach",
 					tc.Function.Name, err, tc.Function.Name, tc.Function.Arguments)
-				a.messages = append(a.messages, openai.ChatCompletionMessage{
-					Role:       openai.ChatMessageRoleTool,
+				a.messages = append(a.messages, types.ChatCompletionMessage{
+					Role:       types.ChatMessageRoleTool,
 					ToolCallID: tc.ID,
 					Content:    errorMsg,
 				})
 			} else {
-				a.messages = append(a.messages, openai.ChatCompletionMessage{
-					Role:       openai.ChatMessageRoleTool,
+				a.messages = append(a.messages, types.ChatCompletionMessage{
+					Role:       types.ChatMessageRoleTool,
 					ToolCallID: tc.ID,
 					Content:    toolOutput,
 				})
@@ -432,7 +402,7 @@ func cleanToolArguments(args string) string {
 	return strings.TrimSpace(args)
 }
 
-func (a *Agent) executeToolCall(toolCall openai.ToolCall, scriptMap map[string]string, skillPath string) (string, error) {
+func (a *Agent) executeToolCall(toolCall types.ToolCall, scriptMap map[string]string, skillPath string) (string, error) {
 	var toolOutput string
 	var err error
 	// Set workdir if skillPath is available

@@ -6,26 +6,24 @@ import (
 	"io/fs"
 	"strings"
 
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 )
 
-func DefineReadLocal(dirs ...fs.FS) *Tool {
-	return &Tool{
-		Define: openai.Tool{
-			Type: openai.ToolTypeFunction,
-			Function: &openai.FunctionDefinition{
-				Name:        "read",
-				Description: "Provides file and folder reading functions",
-				Parameters: map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"path": map[string]any{
-							"type":        "string",
-							"description": "Use for when you need to read local information",
-						},
+func DefineReadLocal(dirs ...fs.FS) types.Tool {
+	return types.Tool{
+		Type: types.ToolTypeFunction,
+		Function: &types.FunctionDefinition{
+			Name:        "read",
+			Description: "Provides file and folder reading functions",
+			Parameters: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"path": map[string]any{
+						"type":        "string",
+						"description": "Use for when you need to read local information",
 					},
-					"required": []string{"path"},
 				},
+				"required": []string{"path"},
 			},
 		},
 		Exec: func(in string) (out string, e error) {

@@ -9,8 +9,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/opentoys/agentsdk/tool"
-	"github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 	"gopkg.in/yaml.v3"
 )
 
@@ -20,7 +19,7 @@ type SkillPackage struct {
 	Meta      SkillMeta      `json:"meta"`
 	Body      string         `json:"body"` // Raw Markdown content of SKILL.md body
 	Resources SkillResources `json:"resources"`
-	BaseTools []openai.Tool  `json:"-"`
+	BaseTools []types.Tool   `json:"-"`
 }
 
 // ToolParameter 定义工具参数
@@ -316,7 +315,7 @@ func ParseSkillPackages(root fs.FS) (skills []*SkillPackage, e error) {
 }
 
 // SkillsToPrompt converts a slice of SkillPackage objects to a prompt string
-func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]*tool.Tool) string {
+func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]types.Tool) string {
 	var builder strings.Builder
 
 	// Add skills instructions header
@@ -341,7 +340,7 @@ func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]*tool.Tool)
 			if v.Prompt != "" {
 				builder.WriteString(v.Prompt + "\n")
 			} else {
-				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Define.Function.Name, v.Define.Function.Description))
+				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Function.Name, v.Function.Description))
 			}
 		}
 		builder.WriteString("</available_tools_instructions>\n\n")

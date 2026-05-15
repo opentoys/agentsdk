@@ -10,27 +10,25 @@ import (
 	"strings"
 	"time"
 
-	openai "github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 )
 
 // DefineBashTool name: bash
-func DefineBashTool() *Tool {
-	return &Tool{
-		Define: openai.Tool{
-			Type: openai.ToolTypeFunction,
-			Function: &openai.FunctionDefinition{
-				Name:        "bash",
-				Description: "Run a shell command. Use for: file operations (cat, grep, echo, head, tail), running scripts (python3, node, npx tsx, bash), git operations, package management (npm, pip), system commands (ls, find, curl), and any other shell command.",
-				Parameters: map[string]any{
-					"type": "object",
-					"properties": map[string]any{
-						"command": map[string]any{
-							"type":        "string",
-							"description": "The shell command to execute.",
-						},
+func DefineBashTool() types.Tool {
+	return types.Tool{
+		Type: types.ToolTypeFunction,
+		Function: &types.FunctionDefinition{
+			Name:        "bash",
+			Description: "Run a shell command. Use for: file operations (cat, grep, echo, head, tail), running scripts (python3, node, npx tsx, bash), git operations, package management (npm, pip), system commands (ls, find, curl), and any other shell command.",
+			Parameters: map[string]any{
+				"type": "object",
+				"properties": map[string]any{
+					"command": map[string]any{
+						"type":        "string",
+						"description": "The shell command to execute.",
 					},
-					"required": []string{"command"},
 				},
+				"required": []string{"command"},
 			},
 		},
 		Exec: func(in string) (out string, e error) {
