@@ -19,22 +19,16 @@ agentsdk/
 │   └── tool_gen.go           # 从技能定义自动生成 OpenAI Tool 定义
 ├── tool/                     # 内置工具集
 │   ├── types.go              # Tool 核心类型定义（含 Prompt 字段）
-│   ├── http.go               # HTTP 请求工具 (curl 兼容)
-│   ├── curl.go               # curl 命令行解析器
 │   ├── bash.go               # Bash shell 执行工具（含安全检查 + 超时）
 │   ├── read.go               # 本地文件/目录读取工具
 │   ├── search.go             # Tavily 网络搜索工具
-│   └── http_test.go          # HTTP 工具测试
 ├── vfs/                      # 虚拟文件系统（实现 fs.FS 接口）
 │   ├── mem.go                # 内存文件系统 MemFS
 │   └── zip.go                # ZIP 文件系统 ZipFS
 ├── examples/cli/             # CLI 示例程序
 │   ├── main.go               # 完整使用示例（含 VFS + 记忆持久化）
 │   └── xxx.json              # 示例历史消息 JSON
-└── modules/officalmcp/       # Go MCP SDK (第三方库，内嵌)
-    ├── mcp/                  # MCP 协议实现 (client/server/protocol/transport/sse/streamable)
-    ├── auth/                 # 认证模块 (OAuth2/OIDC)
-    └── jsonrpc/              # JSON-RPC 层
+└── modules/officalmcp/       # Go MCP SDK (第三方库，内嵌, 用于剔除部分依赖降低 go version)
 ```
 
 ---
@@ -272,16 +266,6 @@ result, err := tool.Bash("ls -la")           // 默认 2 分钟超时
 result, err = tool.BashWithTimeout("sleep 5", 10*time.Second)  // 自定义超时
 ```
 
-##### HTTP 工具 (curl 兼容)
-
-解析 curl 命令字符串后发送 HTTP 请求，响应为 JSON 时自动美化输出。
-
-支持的 curl 参数：`-X/--request`, `-H/--header`, `-d/--data/--data-raw/--data-binary`, `--connect-timeout/-m/--max-time`, `-k/--insecure`, `-u/--user`
-
-```go
-result, err := tool.HttpRequest(`curl -X POST https://api.example.com/data -H "Content-Type: application/json" -d '{"key":"value"}'`)
-```
-
 #### MCPServer 配置
 
 #### 两种传输方式
@@ -351,5 +335,6 @@ summary, err := memory.BuildSummarize(ctx, summarizer, messages, opts)
 
 ## 参考项目
 
-- [goskills](https://github.com/smallnest/goskills)
-- [anna](https://github.com/vaayne/anna)
+- [goskills](https://github.com/smallnest/goskills) `Reference skills implementation`
+- [anna](https://github.com/vaayne/anna) `Reference memory implementation`
+- [go-mcp](https://github.com/modelcontextprotocol/go-sdk) `Downgrading mcp to go1.23`
