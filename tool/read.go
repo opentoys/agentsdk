@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/fs"
-	"os"
-	"path/filepath"
 	"strings"
 
 	openai "github.com/sashabaranov/go-openai"
@@ -44,11 +42,10 @@ func DefineReadLocal(dirs ...fs.FS) *Tool {
 					return rw, nil
 				}
 			}
-			return ReadLocal(params.Path)
+			return "", nil
 		},
 		Prompt: `**read(path)**: Provides file and folder reading functions
   Use for when you need to read local information
-
 `,
 	}
 }
@@ -76,38 +73,6 @@ func ReadFS(root fs.FS, path string) (rw string, e error) {
 	}
 
 	buf, e := fs.ReadFile(root, path)
-	rw = string(buf)
-	return
-}
-
-func ReadLocal(path string) (rw string, e error) {
-	path, e = filepath.Abs(path)
-	if e != nil {
-		return
-	}
-
-	fo, e := os.Stat(path)
-	if e != nil {
-		return
-	}
-	if fo.IsDir() {
-		ents, e := os.ReadDir(path)
-		if e != nil {
-			return "", e
-		}
-		var sw strings.Builder
-		for _, v := range ents {
-			if v.IsDir() {
-				sw.WriteString(fmt.Sprintf("dir: %s\n", v.Name()))
-			} else {
-				f, _ := v.Info()
-				sw.WriteString(fmt.Sprintf("file: %s	size: %d	modification: %s	\n", v.Name(), f.Size(), f.ModTime()))
-			}
-		}
-		return sw.String(), nil
-	}
-
-	buf, e := os.ReadFile(path)
 	rw = string(buf)
 	return
 }

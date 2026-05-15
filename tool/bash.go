@@ -13,6 +13,7 @@ import (
 	openai "github.com/sashabaranov/go-openai"
 )
 
+// DefineBashTool name: bash
 func DefineBashTool() *Tool {
 	return &Tool{
 		Define: openai.Tool{
