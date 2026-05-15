@@ -9,21 +9,26 @@ import (
 
 	"github.com/opentoys/agentsdk"
 	"github.com/opentoys/agentsdk/memory"
+	"github.com/opentoys/agentsdk/modules/aichat"
 	"github.com/opentoys/agentsdk/tool"
+	"github.com/opentoys/agentsdk/types"
 	"github.com/opentoys/agentsdk/vfs"
-	"github.com/sashabaranov/go-openai"
 )
 
 func main() {
+	chat := aichat.NewOpenAI(
+		aichat.WithOpenAIKey(os.Getenv("OPENAI_API_KEY")),
+		aichat.WithOpenAIBase(os.Getenv("OPENAI_API_BASE")),
+		aichat.WithOpenAIModel(os.Getenv("OPENAI_API_MODE")),
+	)
+
 	mem := vfs.NewMem()
 	mem.WriteFile("xxx/SKILL.md", []byte("hello"))
 	rcfg := &agentsdk.Config{
-		SkillsDir: mem,
-		APIKey:    os.Getenv("OPENAI_API_KEY"),
-		APIBase:   os.Getenv("OPENAI_API_BASE"),
-		Model:     os.Getenv("OPENAI_API_MODE"),
-		Debug:     &agentsdk.DefaultLog{},
-		BaseTools: map[string]*tool.Tool{
+		SkillsDir:  os.DirFS(os.Getenv("SKILL_DIR")),
+		ChatClient: chat,
+		Debug:      &agentsdk.DefaultLog{},
+		BaseTools: map[string]types.Tool{
 			"bash": tool.DefineBashTool(),
 			"read": tool.DefineReadLocal(mem),
 		},
@@ -37,7 +42,7 @@ func main() {
 		panic(e)
 	}
 
-	var messages []openai.ChatCompletionMessage
+	var messages []types.ChatCompletionMessage
 	buf, _ := os.ReadFile("xxx.json")
 	json.Unmarshal(buf, &messages)
 	var prev = len(messages)
@@ -51,8 +56,8 @@ func main() {
 	buf, _ = json.Marshal(agent.Messages()[prev:])
 	if len(buf) > 0 {
 		summar, _ := memory.BuildSummarize(context.Background(), agent.Chat, string(buf), memory.SummarizeOptions{})
-		messages = append(messages, openai.ChatCompletionMessage{
-			Role:    openai.ChatMessageRoleSystem,
+		messages = append(messages, types.ChatCompletionMessage{
+			Role:    types.ChatMessageRoleSystem,
 			Content: summar,
 		})
 	}

@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
-	"github.com/sashabaranov/go-openai"
+	"github.com/opentoys/agentsdk/types"
 )
 
 // Client manages connections to multiple MCP servers.
@@ -117,9 +117,7 @@ func (c *Client) Close() error {
 }
 
 // GetTools fetches tools from all connected servers and converts them to OpenAI tools.
-func (c *Client) GetTools(ctx context.Context) ([]openai.Tool, error) {
-	var allTools []openai.Tool
-
+func (c *Client) GetTools(ctx context.Context) (allTools []types.Tool, e error) {
 	for serverName, session := range c.sessions {
 		listToolsResult, err := session.ListTools(ctx, &mcp.ListToolsParams{})
 		if err != nil {
@@ -128,9 +126,9 @@ func (c *Client) GetTools(ctx context.Context) ([]openai.Tool, error) {
 		}
 
 		for _, tool := range listToolsResult.Tools {
-			openaiTool := openai.Tool{
-				Type: openai.ToolTypeFunction,
-				Function: &openai.FunctionDefinition{
+			openaiTool := types.Tool{
+				Type: types.ToolTypeFunction,
+				Function: &types.FunctionDefinition{
 					Name:        fmt.Sprintf("%s__%s", serverName, tool.Name),
 					Description: tool.Description,
 					Parameters:  tool.InputSchema,
@@ -140,7 +138,7 @@ func (c *Client) GetTools(ctx context.Context) ([]openai.Tool, error) {
 		}
 	}
 
-	return allTools, nil
+	return
 }
 
 // CallTool calls a tool on the appropriate server with retry and reconnection support.
