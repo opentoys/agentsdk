@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"slices"
 	"strings"
 
 	"github.com/opentoys/agentsdk/mcp"
@@ -15,17 +14,6 @@ import (
 	"github.com/opentoys/agentsdk/tool"
 	openai "github.com/sashabaranov/go-openai"
 )
-
-const xcontextid = "x-context-id"
-
-func GetContextID(ctx context.Context) (id string) {
-	id, _ = ctx.Value(xcontextid).(string)
-	return
-}
-
-func SetContextID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, xcontextid, id)
-}
 
 // OpenAIChatClient interface for dependency injection and testing
 type OpenAIChatClient interface {
@@ -48,10 +36,9 @@ type Config struct {
 	SkillsDir     fs.FS
 	MCPServers    map[string]mcp.MCPServer
 	MCPMaxRetries int
-	Debug         bool
+	Debug         Logger
 	History       []openai.ChatCompletionMessage // Defining historical messages
 	BaseTools     map[string]*tool.Tool          // Custom tool collection
-	AllowSkills   []string                       // The skill name that is allowed to be called. Empty is not limited
 }
 
 // New creates and initializes a new Agent.
@@ -108,12 +95,12 @@ func (a *Agent) Chat(ctx context.Context, prompt string) (content string, e erro
 		},
 		Temperature: 0,
 	}
-	a.debugPrintRequest(req)
+	a.debugPrintRequest(ctx, req)
 	resp, err := a.client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	a.debugPrintResponse(resp)
+	a.debugPrintResponse(ctx, resp)
 	content = resp.Choices[0].Message.Content
 	return
 }
@@ -190,9 +177,7 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	sb.WriteString("User Request: " + "" + userPrompt + "" + "\n\n")
 	sb.WriteString("Available Skills:\n")
 	for name, skill := range skills {
-		if len(a.cfg.AllowSkills) == 0 || slices.Contains(a.cfg.AllowSkills, name) {
-			sb.WriteString(fmt.Sprintf("- %s: %s\n", name, skill.Meta.Description))
-		}
+		sb.WriteString(fmt.Sprintf("- %s: %s\n", name, skill.Meta.Description))
 	}
 	sb.WriteString("\nSelection Guidelines:\n")
 	sb.WriteString("- For pure mathematical calculations (arithmetic, trigonometry, logarithms, etc.), ALWAYS prefer 'calculator-skill' over spreadsheet skills\n")
@@ -221,12 +206,12 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 		Temperature: 0,
 	}
 
-	a.debugPrintRequest(req)
+	a.debugPrintRequest(ctx, req)
 	resp, err := a.client.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}
-	a.debugPrintResponse(resp)
+	a.debugPrintResponse(ctx, resp)
 
 	content := strings.TrimSpace(resp.Choices[0].Message.Content)
 	content = strings.Trim(content, "'\"")
@@ -262,37 +247,29 @@ func extractSkillName(content string, skills map[string]skill.SkillPackage) stri
 }
 
 // debugPrintRequest prints the LLM request in debug mode
-func (a *Agent) debugPrintRequest(req openai.ChatCompletionRequest) {
-	if !a.cfg.Debug {
+func (a *Agent) debugPrintRequest(ctx context.Context, req openai.ChatCompletionRequest) {
+	if a.cfg.Debug == nil {
 		return
 	}
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
-	fmt.Fprintln(os.Stderr, "LLM Request:")
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
-	jsonBytes, err := json.MarshalIndent(req, "", "  ")
+
+	jsonBytes, err := json.Marshal(req)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error marshaling request to JSON: %v\n", err)
-	} else {
-		fmt.Fprintln(os.Stderr, string(jsonBytes))
+		a.cfg.Debug.Printf(ctx, "LLM Request: Error marshaling request to JSON: %v\n", err)
 	}
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
+	a.cfg.Debug.Printf(ctx, "LLM Request: %s", string(jsonBytes))
 }
 
 // debugPrintResponse prints the LLM response in debug mode
-func (a *Agent) debugPrintResponse(resp openai.ChatCompletionResponse) {
-	if !a.cfg.Debug {
+func (a *Agent) debugPrintResponse(ctx context.Context, resp openai.ChatCompletionResponse) {
+	if a.cfg.Debug == nil {
 		return
 	}
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
-	fmt.Fprintln(os.Stderr, "LLM Response:")
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
-	jsonBytes, err := json.MarshalIndent(resp, "", "  ")
+
+	jsonBytes, err := json.Marshal(resp)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error marshaling response to JSON: %v\n", err)
-	} else {
-		fmt.Fprintln(os.Stderr, string(jsonBytes))
+		a.cfg.Debug.Printf(ctx, "LLM Response: Error marshaling response to JSON: %v\n", err)
 	}
-	fmt.Fprintln(os.Stderr, strings.Repeat("=", 60))
+	a.cfg.Debug.Printf(ctx, "LLM Response: %s", string(jsonBytes))
 }
 
 // executeSkillWithTools sets up the initial system prompt and starts the tool-use conversation.
@@ -343,12 +320,12 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 			Tools:    availableTools,
 		}
 
-		a.debugPrintRequest(req)
+		a.debugPrintRequest(ctx, req)
 		resp, err := a.client.CreateChatCompletion(ctx, req)
 		if err != nil {
 			return "", fmt.Errorf("ChatCompletion error: %w", err)
 		}
-		a.debugPrintResponse(resp)
+		a.debugPrintResponse(ctx, resp)
 
 		msg := resp.Choices[0].Message
 		a.messages = append(a.messages, msg) // Append LLM's response
