@@ -24,12 +24,12 @@ type Agent struct {
 
 // Config holds all the necessary configuration for the runner.
 type Config struct {
-	ChatClient types.OpenAIChatClient
-	SkillsDir  fs.FS
-	Debug      Logger
-	McpServers types.ClientSessioner
-	History    []types.ChatCompletionMessage // Defining historical messages
-	BaseTools  map[string]types.Tool         // Custom tool collection
+	SkillsFS    fs.FS
+	Debug       Logger
+	ChatClient  types.OpenAIChatClient
+	McpSessions types.ClientSessioner
+	History     []types.ChatCompletionMessage // Defining historical messages
+	BaseTools   map[string]types.Tool         // Custom tool collection
 }
 
 // New creates and initializes a new Agent.
@@ -41,7 +41,7 @@ func New(cfg *Config) (a *Agent, e error) {
 		client:    cfg.ChatClient,
 		cfg:       cfg,
 		messages:  cfg.History, // Initialize empty message history
-		mcpClient: cfg.McpServers,
+		mcpClient: cfg.McpSessions,
 	}, nil
 }
 
@@ -95,7 +95,7 @@ func (a *Agent) NewChat(history []types.ChatCompletionMessage) (n *Agent) {
 
 // selectAndPrepareSkill discovers and selects the appropriate skill.
 func (a *Agent) selectAndPrepareSkill(ctx context.Context, userPrompt string) (*skill.SkillPackage, error) {
-	availableSkills, err := a.discoverSkills(a.cfg.SkillsDir)
+	availableSkills, err := a.discoverSkills(a.cfg.SkillsFS)
 	if err != nil {
 		return nil, fmt.Errorf("failed to discover skills: %w", err)
 	}
