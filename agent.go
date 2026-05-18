@@ -274,7 +274,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 
 	// Add MCP tools if client is available
 	if a.mcpClient != nil {
-		mcpTools, err := a.mcpClient.GetTools(ctx)
+		mcpTools, err := a.mcpClient.ListTools(ctx)
 		if err != nil {
 			return "", err
 		} else {

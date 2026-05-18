@@ -9,8 +9,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/opentoys/agentsdk/modules/yaml"
 	"github.com/opentoys/agentsdk/types"
-	"gopkg.in/yaml.v3"
 )
 
 // SkillPackage represents a fully and finely parsed Claude Skill package

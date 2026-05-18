@@ -2,12 +2,13 @@ package mcp
 
 // Config represents the structure of the ~/.claude.json file.
 type Config struct {
-	MCPServers map[string]MCPServer `json:"mcpServers"`
-	MaxRetries int                  `json:"maxRetries,omitempty"` // Default retry count for tool calls
+	Servers    map[string]Server `json:"mcpServers"`
+	MaxRetries int               `json:"maxRetries,omitempty"` // Default retry count for tool calls
+	Connecter  Connecter
 }
 
 // MCPServer represents a single MCP server configuration.
-type MCPServer struct {
+type Server struct {
 	Command     string            `json:"command"`
 	Args        []string          `json:"args"`
 	Env         map[string]string `json:"env,omitempty"`

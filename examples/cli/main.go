@@ -13,24 +13,22 @@ import (
 	"github.com/opentoys/agentsdk/modules/mcp"
 	"github.com/opentoys/agentsdk/tool"
 	"github.com/opentoys/agentsdk/types"
-	"github.com/opentoys/agentsdk/vfs"
 )
 
 func main() {
-	mem := vfs.NewMem()
-	mem.WriteFile("xxx/SKILL.md", []byte("hello"))
+	fs := os.DirFS(os.Getenv("SKILL_DIR"))
 	rcfg := &agentsdk.Config{
-		SkillsDir: os.DirFS(os.Getenv("SKILL_DIR")),
+		SkillsFS: fs,
+		Debug:    &agentsdk.DefaultLog{},
 		ChatClient: aichat.NewOpenAI(
 			aichat.WithOpenAIKey(os.Getenv("OPENAI_API_KEY")),
 			aichat.WithOpenAIBase(os.Getenv("OPENAI_API_BASE")),
 			aichat.WithOpenAIModel(os.Getenv("OPENAI_API_MODE")),
 		),
-		McpServers: mcp.NewClient(context.Background(), &mcp.Config{}),
-		Debug:      &agentsdk.DefaultLog{},
+		McpSessions: mcp.NewClient(context.Background(), &mcp.Config{}),
 		BaseTools: map[string]types.Tool{
 			"bash": tool.DefineBashTool(),
-			"read": tool.DefineReadLocal(mem),
+			"read": tool.DefineReadLocal(fs),
 		},
 	}
 

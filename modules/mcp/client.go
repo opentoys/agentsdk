@@ -6,19 +6,20 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"os/exec"
 	"strings"
 	"time"
 
-	"github.com/opentoys/agentsdk/modules/officalmcp/mcp"
 	"github.com/opentoys/agentsdk/types"
 )
 
+type Connecter = func(ctx context.Context, config Server) (cs types.ClientSessioner, e error)
+
 // Client manages connections to multiple MCP servers.
 type Client struct {
-	sessions   map[string]*mcp.ClientSession
+	sessions   map[string]types.ClientSessioner
 	config     *Config
 	maxRetries int
+	Connecter  Connecter
 }
 
 // NewClient creates a new MCP client and connects to the servers defined in the config.
@@ -28,63 +29,20 @@ func NewClient(ctx context.Context, config *Config) *Client {
 		maxRetries = 3 // Default to 3 retries
 	}
 	c := &Client{
-		sessions:   make(map[string]*mcp.ClientSession),
+		sessions:   make(map[string]types.ClientSessioner),
 		config:     config,
 		maxRetries: maxRetries,
+		Connecter:  config.Connecter,
 	}
-	for name, server := range config.MCPServers {
-		if err := c.connectToServer(ctx, name, server); err != nil {
+	for name, server := range config.Servers {
+		session, e := c.Connecter(ctx, server)
+		if e != nil {
 			// Log error but continue connecting to other servers
-			fmt.Fprintf(os.Stderr, "Failed to connect to MCP server %s: %v\n", name, err)
+			fmt.Fprintf(os.Stderr, "Failed to connect to MCP server %s: %v\n", name, e)
 		}
+		c.sessions[name] = session
 	}
 	return c
-}
-
-func (c *Client) connectToServer(ctx context.Context, name string, server MCPServer) error {
-	var transport mcp.Transport
-
-	if server.Type == "sse" {
-		sseTransport := &mcp.SSEClientTransport{
-			Endpoint: server.URL,
-		}
-		if len(server.Headers) > 0 {
-			sseTransport.HTTPClient = &http.Client{
-				Transport: &headerTransport{
-					Transport: http.DefaultTransport,
-					Headers:   server.Headers,
-				},
-			}
-		}
-		transport = sseTransport
-	} else {
-		// Default to stdio
-		cmd := exec.Command(server.Command, server.Args...)
-		cmd.Env = os.Environ()
-		for k, v := range server.Env {
-			cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", k, v))
-		}
-
-		// Capture stderr for debugging
-		cmd.Stderr = os.Stderr
-
-		transport = &mcp.CommandTransport{
-			Command: cmd,
-		}
-	}
-
-	mcpClient := mcp.NewClient(&mcp.Implementation{
-		Name:    "goskills",
-		Version: "0.1.0",
-	}, nil)
-
-	session, err := mcpClient.Connect(ctx, transport, nil)
-	if err != nil {
-		return fmt.Errorf("failed to connect to server: %w", err)
-	}
-
-	c.sessions[name] = session
-	return nil
 }
 
 type headerTransport struct {
@@ -113,28 +71,19 @@ func (c *Client) Close() error {
 	return nil
 }
 
-// GetTools fetches tools from all connected servers and converts them to OpenAI tools.
-func (c *Client) GetTools(ctx context.Context) (allTools []types.Tool, e error) {
+// ListTools fetches tools from all connected servers and converts them to OpenAI tools.
+func (c *Client) ListTools(ctx context.Context) (allTools []types.Tool, e error) {
 	for serverName, session := range c.sessions {
-		listToolsResult, err := session.ListTools(ctx, &mcp.ListToolsParams{})
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Failed to list tools from server %s: %v\n", serverName, err)
+		tools, e := session.ListTools(ctx)
+		if e != nil {
+			fmt.Fprintf(os.Stderr, "Failed to list tools from server %s: %v\n", serverName, e)
 			continue
 		}
-
-		for _, tool := range listToolsResult.Tools {
-			openaiTool := types.Tool{
-				Type: types.ToolTypeFunction,
-				Function: &types.FunctionDefinition{
-					Name:        fmt.Sprintf("%s__%s", serverName, tool.Name),
-					Description: tool.Description,
-					Parameters:  tool.InputSchema,
-				},
-			}
-			allTools = append(allTools, openaiTool)
+		for _, tool := range tools {
+			tool.Function.Name = fmt.Sprintf("%s__%s", serverName, tool.Function.Name)
+			allTools = append(allTools, tool)
 		}
 	}
-
 	return
 }
 
@@ -146,7 +95,7 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 		return nil, err
 	}
 
-	server, ok := c.config.MCPServers[serverName]
+	server, ok := c.config.Servers[serverName]
 	if !ok {
 		return nil, fmt.Errorf("server %s not found in config", serverName)
 	}
@@ -157,10 +106,7 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 			return nil, fmt.Errorf("server %s session not found", serverName)
 		}
 
-		result, err := session.CallTool(ctx, &mcp.CallToolParams{
-			Name:      toolName,
-			Arguments: args,
-		})
+		result, err := session.CallTool(ctx, toolName, args)
 
 		if err == nil {
 			return result, nil
@@ -183,9 +129,11 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 				time.Sleep(backoff)
 
 				// Attempt to reconnect
-				if reconnectErr := c.connectToServer(ctx, serverName, server); reconnectErr != nil {
+				if sc, reconnectErr := c.Connecter(ctx, server); reconnectErr != nil {
 					log.Printf("Reconnection failed: %v", reconnectErr)
 					continue
+				} else {
+					c.sessions[serverName] = sc
 				}
 				log.Printf("Reconnection successful for server %s", serverName)
 				continue

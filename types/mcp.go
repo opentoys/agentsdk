@@ -9,8 +9,9 @@ const (
 )
 
 type ClientSessioner interface {
-	GetTools(ctx context.Context) ([]Tool, error)
+	ListTools(ctx context.Context) ([]Tool, error)
 	CallTool(context.Context, string, map[string]any) (any, error)
+	Close() error
 }
 
 type Tool struct {

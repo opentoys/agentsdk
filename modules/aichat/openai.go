@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 
+	"github.com/opentoys/agentsdk/modules/stdlib/jsonx"
 	"github.com/opentoys/agentsdk/types"
 )
 
@@ -49,7 +50,7 @@ func NewOpenAI(opts ...Option) *openAI {
 func (s *openAI) CreateChatCompletion(ctx context.Context, in types.ChatCompletionRequest) (out types.ChatCompletionResponse, e error) {
 	var url = s.base + chaturl
 	in.Model = s.model
-	buf, e := types.Marshal(in)
+	buf, e := jsonx.Marshal(in)
 	if e != nil {
 		return
 	}
@@ -69,7 +70,7 @@ func (s *openAI) CreateChatCompletion(ctx context.Context, in types.ChatCompleti
 		return
 	}
 
-	if e = types.Unmarshal(buf, &out); e != nil {
+	if e = jsonx.Unmarshal(buf, &out); e != nil {
 		return
 	}
 	if out.ID == "" {
