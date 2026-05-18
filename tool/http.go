@@ -86,7 +86,6 @@ type httpParams struct {
 }
 
 func request(in httpParams) (rw string, e error) {
-	fmt.Println(in)
 	ts, e := time.ParseDuration(in.Timeout)
 	if e != nil {
 		ts = time.Second * 30

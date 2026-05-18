@@ -16,10 +16,9 @@ import (
 
 // Agent manages the skill discovery, selection, and execution process.
 type Agent struct {
-	client    types.OpenAIChatClient
-	cfg       *Config
-	messages  []types.ChatCompletionMessage // Stores the conversation history
-	mcpClient types.ClientSessioner
+	cfg      Config
+	messages []types.ChatCompletionMessage // Stores the conversation history
+	usage    types.Usage
 }
 
 // Config holds all the necessary configuration for the runner.
@@ -34,7 +33,7 @@ type Config struct {
 }
 
 // New creates and initializes a new Agent.
-func New(cfg *Config) (a *Agent, e error) {
+func New(cfg Config) (a *Agent, e error) {
 	if cfg.ChatClient == nil {
 		return nil, errors.New("API key is not set")
 	}
@@ -42,10 +41,8 @@ func New(cfg *Config) (a *Agent, e error) {
 		cfg.SkillsFS = os.DirFS(cfg.SkillsDir)
 	}
 	return &Agent{
-		client:    cfg.ChatClient,
-		cfg:       cfg,
-		messages:  cfg.History, // Initialize empty message history
-		mcpClient: cfg.McpSessions,
+		cfg:      cfg,
+		messages: cfg.History, // Initialize empty message history
 	}, nil
 }
 
@@ -67,13 +64,15 @@ func (a *Agent) Messages() (lst []types.ChatCompletionMessage) {
 	return append(lst, a.messages...)
 }
 
+func (a *Agent) Usage() types.Usage {
+	return a.usage
+}
+
 // NewChat reuse all configurations, just reset context message
 func (a *Agent) NewChat(history []types.ChatCompletionMessage) (n *Agent) {
 	n = &Agent{
-		client:    a.client,
-		cfg:       a.cfg,
-		messages:  append([]types.ChatCompletionMessage{}, history...),
-		mcpClient: a.mcpClient,
+		cfg:      a.cfg,
+		messages: append([]types.ChatCompletionMessage{}, history...),
 	}
 	return
 }
@@ -163,11 +162,14 @@ func (a *Agent) selectSkill(ctx context.Context, userPrompt string, skills map[s
 	}
 
 	a.debugPrintRequest(ctx, req)
-	resp, err := a.client.CreateChatCompletion(ctx, req)
+	resp, err := a.cfg.ChatClient.CreateChatCompletion(ctx, req)
 	if err != nil {
 		return "", err
 	}
 	a.debugPrintResponse(ctx, resp)
+	a.usage.CompletionTokens += resp.Usage.CompletionTokens
+	a.usage.PromptTokens += resp.Usage.PromptTokens
+	a.usage.TotalTokens += resp.Usage.TotalTokens
 
 	content := strings.TrimSpace(resp.Choices[0].Message.Content)
 	content = strings.Trim(content, "'\"")
@@ -266,8 +268,8 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 	availableTools, scriptMap := skill.GenerateToolDefinitions(skillp)
 
 	// Add MCP tools if client is available
-	if a.mcpClient != nil {
-		mcpTools, err := a.mcpClient.ListTools(ctx)
+	if a.cfg.McpSessions != nil {
+		mcpTools, err := a.cfg.McpSessions.ListTools(ctx)
 		if err != nil {
 			return "", err
 		} else {
@@ -284,11 +286,14 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 		}
 
 		a.debugPrintRequest(ctx, req)
-		resp, err := a.client.CreateChatCompletion(ctx, req)
+		resp, err := a.cfg.ChatClient.CreateChatCompletion(ctx, req)
 		if err != nil {
 			return "", fmt.Errorf("ChatCompletion error: %w", err)
 		}
 		a.debugPrintResponse(ctx, resp)
+		a.usage.CompletionTokens += resp.Usage.CompletionTokens
+		a.usage.PromptTokens += resp.Usage.PromptTokens
+		a.usage.TotalTokens += resp.Usage.TotalTokens
 
 		msg := resp.Choices[0].Message
 		a.messages = append(a.messages, msg) // Append LLM's response
@@ -303,7 +308,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 			var err error
 
 			// Check if it is an MCP tool
-			if a.mcpClient != nil && strings.Contains(tc.Function.Name, "__") {
+			if a.cfg.McpSessions != nil && strings.Contains(tc.Function.Name, "__") {
 				// Clean arguments for MCP tools too
 				cleanedArgs := cleanToolArguments(tc.Function.Arguments)
 
@@ -312,7 +317,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 					toolOutput = fmt.Sprintf("Error unmarshalling arguments: %v (cleaned args: %s)", err, cleanedArgs)
 				} else {
 					var result any
-					result, err = a.mcpClient.CallTool(ctx, tc.Function.Name, args)
+					result, err = a.cfg.McpSessions.CallTool(ctx, tc.Function.Name, args)
 					if err == nil {
 						// Convert result to string/JSON
 						resBytes, _ := json.Marshal(result)
