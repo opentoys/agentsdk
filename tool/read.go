@@ -15,7 +15,7 @@ func DefineReadLocal(dirs ...fs.FS) types.Tool {
 		Type: types.ToolTypeFunction,
 		Function: &types.FunctionDefinition{
 			Name:        "read",
-			Description: "Provides file and folder reading functions",
+			Description: "Provides file and folder reading functions. skill read must be use this tool!!!",
 			Parameters: map[string]any{
 				"type": "object",
 				"properties": map[string]any{

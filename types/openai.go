@@ -55,7 +55,7 @@ type ChatCompletionRequest struct {
 
 type ChatCompletionMessage struct {
 	Role             string `json:"role"`
-	Content          string `json:"content,omitempty"`
+	Content          string `json:"content"`
 	Refusal          string `json:"refusal,omitempty"`
 	MultiContent     []ChatMessagePart
 	Name             string        `json:"name,omitempty"`

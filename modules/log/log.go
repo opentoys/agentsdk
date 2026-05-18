@@ -1,14 +1,10 @@
-package agentsdk
+package log
 
 import (
 	"context"
 	"fmt"
 	"os"
 )
-
-type Logger interface {
-	Printf(ctx context.Context, msg string, args ...any)
-}
 
 type DefaultLog struct{}
 

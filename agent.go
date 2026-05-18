@@ -24,8 +24,9 @@ type Agent struct {
 
 // Config holds all the necessary configuration for the runner.
 type Config struct {
+	SkillsDir   string
 	SkillsFS    fs.FS
-	Debug       Logger
+	Debug       types.Logger
 	ChatClient  types.OpenAIChatClient
 	McpSessions types.ClientSessioner
 	History     []types.ChatCompletionMessage // Defining historical messages
@@ -36,6 +37,9 @@ type Config struct {
 func New(cfg *Config) (a *Agent, e error) {
 	if cfg.ChatClient == nil {
 		return nil, errors.New("API key is not set")
+	}
+	if cfg.SkillsFS == nil {
+		cfg.SkillsFS = os.DirFS(cfg.SkillsDir)
 	}
 	return &Agent{
 		client:    cfg.ChatClient,
@@ -55,25 +59,6 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e erro
 		selectedSkill.BaseTools = append(selectedSkill.BaseTools, v)
 	}
 	resp, e = a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
-	return
-}
-
-// Chat reuse all configurations, just reset context message
-func (a *Agent) Chat(ctx context.Context, prompt string) (content string, e error) {
-	req := types.ChatCompletionRequest{
-		Messages: []types.ChatCompletionMessage{
-			{
-				Role:    types.ChatMessageRoleUser,
-				Content: prompt,
-			},
-		},
-		Temperature: 0,
-	}
-	resp, err := a.client.CreateChatCompletion(ctx, req)
-	if err != nil {
-		return "", err
-	}
-	content = resp.Choices[0].Message.Content
 	return
 }
 
@@ -217,6 +202,12 @@ func extractSkillName(content string, skills map[string]skill.SkillPackage) stri
 	return content
 }
 
+func (a *Agent) printf(ctx context.Context, msg string, args ...any) {
+	if a.cfg.Debug != nil {
+		a.cfg.Debug.Printf(ctx, msg, args...)
+	}
+}
+
 // debugPrintRequest prints the LLM request in debug mode
 func (a *Agent) debugPrintRequest(ctx context.Context, req types.ChatCompletionRequest) {
 	if a.cfg.Debug == nil {
@@ -225,9 +216,10 @@ func (a *Agent) debugPrintRequest(ctx context.Context, req types.ChatCompletionR
 
 	jsonBytes, err := json.Marshal(req)
 	if err != nil {
-		a.cfg.Debug.Printf(ctx, "LLM Request: Error marshaling request to JSON: %v\n", err)
+		a.printf(ctx, "LLM Request: Error marshaling request to JSON: %v\n", err)
+		return
 	}
-	a.cfg.Debug.Printf(ctx, "LLM Request: %s", string(jsonBytes))
+	a.printf(ctx, "LLM Request: %s\n", string(jsonBytes))
 }
 
 // debugPrintResponse prints the LLM response in debug mode
@@ -238,9 +230,10 @@ func (a *Agent) debugPrintResponse(ctx context.Context, resp types.ChatCompletio
 
 	jsonBytes, err := json.Marshal(resp)
 	if err != nil {
-		a.cfg.Debug.Printf(ctx, "LLM Response: Error marshaling response to JSON: %v\n", err)
+		a.printf(ctx, "LLM Response: Error marshaling response to JSON: %v\n", err)
+		return
 	}
-	a.cfg.Debug.Printf(ctx, "LLM Response: %s", string(jsonBytes))
+	a.printf(ctx, "LLM Response: %s\n", string(jsonBytes))
 }
 
 // executeSkillWithTools sets up the initial system prompt and starts the tool-use conversation.
@@ -327,7 +320,7 @@ func (a *Agent) continueSkillWithTools(ctx context.Context, userPrompt string, s
 					}
 				}
 			} else {
-				toolOutput, err = a.executeToolCall(ctx, tc, scriptMap, skillp.Path)
+				toolOutput, err = a.executeToolCall(ctx, tc, scriptMap, a.cfg.SkillsDir)
 			}
 
 			if err != nil {

@@ -1,10 +1,13 @@
 package mcp
 
+import "github.com/opentoys/agentsdk/types"
+
 // Config represents the structure of the ~/.claude.json file.
 type Config struct {
 	Servers    map[string]Server `json:"mcpServers"`
 	MaxRetries int               `json:"maxRetries,omitempty"` // Default retry count for tool calls
-	Connecter  Connecter
+	Connecter
+	types.Logger
 }
 
 // MCPServer represents a single MCP server configuration.

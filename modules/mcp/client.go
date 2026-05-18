@@ -3,7 +3,6 @@ package mcp
 import (
 	"context"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"strings"
@@ -17,13 +16,13 @@ type Connecter = func(ctx context.Context, config Server) (cs types.ClientSessio
 // Client manages connections to multiple MCP servers.
 type Client struct {
 	sessions   map[string]types.ClientSessioner
-	config     *Config
+	config     Config
 	maxRetries int
 	Connecter  Connecter
 }
 
 // NewClient creates a new MCP client and connects to the servers defined in the config.
-func NewClient(ctx context.Context, config *Config) *Client {
+func NewClient(ctx context.Context, config Config) *Client {
 	maxRetries := config.MaxRetries
 	if maxRetries <= 0 {
 		maxRetries = 3 // Default to 3 retries
@@ -87,6 +86,12 @@ func (c *Client) ListTools(ctx context.Context) (allTools []types.Tool, e error)
 	return
 }
 
+func (c *Client) printf(ctx context.Context, msg string, args ...any) {
+	if c.config.Logger != nil {
+		c.config.Logger.Printf(ctx, msg, args...)
+	}
+}
+
 // CallTool calls a tool on the appropriate server with retry and reconnection support.
 // The tool name is expected to be in the format "serverName__toolName".
 func (c *Client) CallTool(ctx context.Context, name string, args map[string]any) (any, error) {
@@ -114,7 +119,7 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 
 		// Check if it's a connection-related error
 		if c.isConnectionError(err) {
-			log.Printf("Connection error detected for server %s, attempting reconnection (%d/%d): %v",
+			c.printf(ctx, "Connection error detected for server %s, attempting reconnection (%d/%d): %v",
 				serverName, i+1, c.maxRetries, err)
 
 			// Close the old session
@@ -125,17 +130,17 @@ func (c *Client) CallTool(ctx context.Context, name string, args map[string]any)
 			// Wait with exponential backoff before reconnecting
 			if i < c.maxRetries-1 {
 				backoff := time.Second * time.Duration(i+1)
-				log.Printf("Waiting %v before reconnecting...", backoff)
+				c.printf(ctx, "Waiting %v before reconnecting...", backoff)
 				time.Sleep(backoff)
 
 				// Attempt to reconnect
 				if sc, reconnectErr := c.Connecter(ctx, server); reconnectErr != nil {
-					log.Printf("Reconnection failed: %v", reconnectErr)
+					c.printf(ctx, "Reconnection failed: %v", reconnectErr)
 					continue
 				} else {
 					c.sessions[serverName] = sc
 				}
-				log.Printf("Reconnection successful for server %s", serverName)
+				c.printf(ctx, "Reconnection successful for server %s", serverName)
 				continue
 			}
 		}
