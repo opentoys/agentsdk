@@ -206,7 +206,7 @@ func extractSkillName(content string, skills map[string]skill.SkillPackage) stri
 
 func (a *Agent) printf(ctx context.Context, msg string, args ...any) {
 	if a.cfg.Debug != nil {
-		a.cfg.Debug.Printf(ctx, msg, args...)
+		a.cfg.Debug.Debugf(ctx, msg, args...)
 	}
 }
 

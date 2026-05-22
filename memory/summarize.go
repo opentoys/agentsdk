@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/opentoys/agentsdk/types"
 )
 
 // SummarizePolicy constants control how aggressively content is compressed.
@@ -98,11 +100,6 @@ Target length: about %d tokens.
 %s
 </summaries>`
 
-// Summarizer generates summaries from content.
-type Summarizer interface {
-	Summarize(ctx context.Context, text string, opts SummarizeOptions) (string, error)
-}
-
 // SummarizeOptions controls summarization behavior.
 type SummarizeOptions struct {
 	IsCondensed  bool
@@ -114,13 +111,11 @@ type SummarizeOptions struct {
 
 // BuildPrompt constructs the appropriate summarization prompt.
 func BuildPrompt(text string, opts SummarizeOptions) string {
-	previous := opts.Previous
-	if previous == "" {
-		previous = "(none)"
+	if opts.Previous == "" {
+		opts.Previous = "(none)"
 	}
-	target := opts.TargetTokens
-	if target <= 0 {
-		target = EstimateTokens(text) / 3
+	if opts.TargetTokens <= 0 {
+		opts.TargetTokens = EstimateTokens(text) / 3
 	}
 
 	if !opts.IsCondensed {
@@ -128,26 +123,36 @@ func BuildPrompt(text string, opts SummarizeOptions) string {
 		if opts.Aggressive {
 			policy = leafPolicyAggressive
 		}
-		return fmt.Sprintf(leafPromptTemplate, policy, target, previous, text)
+		return fmt.Sprintf(leafPromptTemplate, policy, opts.TargetTokens, opts.Previous, text)
 	}
 
 	if opts.Depth <= 1 {
-		return fmt.Sprintf(condensedD1Prompt, target, previous, text)
+		return fmt.Sprintf(condensedD1Prompt, opts.TargetTokens, opts.Previous, text)
 	}
-	return fmt.Sprintf(condensedD2Prompt, target, previous, text)
+	return fmt.Sprintf(condensedD2Prompt, opts.TargetTokens, opts.Previous, text)
 }
-
-func BuildSummarize(ctx context.Context, chat LLMGenerate, text string, opts SummarizeOptions) (string, error) {
-	llm := LLMSummarizer{Generate: chat}
-	return llm.Summarize(ctx, text, opts)
-}
-
-type LLMGenerate func(ctx context.Context, prompt string) (string, error)
 
 // LLMSummarizer generates summaries using an LLM via a callback function.
 type LLMSummarizer struct {
 	// Generate calls the LLM with the given prompt and returns the response text.
-	Generate func(ctx context.Context, prompt string) (string, error)
+	AIChat types.OpenAIChatClient
+}
+
+func (s *LLMSummarizer) Generate(ctx context.Context, prompt string) (rw string, e error) {
+	resp, e := s.AIChat.CreateChatCompletion(ctx, types.ChatCompletionRequest{
+		Messages: []types.ChatCompletionMessage{
+			{
+				Role:    types.ChatMessageRoleUser,
+				Content: prompt,
+			},
+		},
+	})
+	if e != nil {
+		e = fmt.Errorf("Build LLMSummarize error: %w", e)
+		return
+	}
+	rw = resp.Choices[0].Message.Content
+	return
 }
 
 // Summarize generates a summary with escalation: normal -> aggressive -> deterministic fallback.
