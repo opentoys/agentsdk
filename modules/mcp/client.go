@@ -88,7 +88,7 @@ func (c *Client) ListTools(ctx context.Context) (allTools []types.Tool, e error)
 
 func (c *Client) printf(ctx context.Context, msg string, args ...any) {
 	if c.config.Logger != nil {
-		c.config.Logger.Printf(ctx, msg, args...)
+		c.config.Logger.Debugf(ctx, msg, args...)
 	}
 }
 
