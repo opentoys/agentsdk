@@ -60,6 +60,7 @@ func (s *openAI) CreateChatCompletion(ctx context.Context, in types.ChatCompleti
 	}
 	req.Header.Set("Authorization", "Bearer "+s.apikey)
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", "go-agentsdk/1.0.0")
 
 	resp, e := http.DefaultClient.Do(req)
 	if e != nil {
