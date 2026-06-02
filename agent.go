@@ -23,13 +23,15 @@ type Agent struct {
 
 // Config holds all the necessary configuration for the runner.
 type Config struct {
-	SkillsDir   string
-	SkillsFS    fs.FS
-	Debug       types.Logger
-	ChatClient  types.OpenAIChatClient
-	McpSessions types.ClientSessioner
-	History     []types.ChatCompletionMessage // Defining historical messages
-	BaseTools   map[string]types.Tool         // Custom tool collection
+	SkillsDir      string
+	SkillsFS       fs.FS
+	Debug          types.Logger
+	ChatClient     types.OpenAIChatClient
+	McpSessions    types.ClientSessioner
+	History        []types.ChatCompletionMessage // Defining historical messages
+	BaseTools      map[string]types.Tool         // Custom tool collection
+	Mode           RunMode                       // Execution mode: ModeDirect (default), ModePlan, ModeAuto
+	PlanMaxRetries int                           // Max auto-fix retries when plan validation fails (default 3)
 }
 
 // New creates and initializes a new Agent.
@@ -47,7 +49,28 @@ func New(cfg Config) (a *Agent, e error) {
 }
 
 // Run executes the main skill selection and execution logic for a single turn.
+// Behavior depends on Config.Mode:
+//   - ModeDirect (default): select one skill and execute it immediately.
+//   - ModePlan: create a multi-step plan, then execute all steps in sequence.
+//   - ModeAuto: if LLM decides multiple skills are needed, use plan mode; otherwise direct.
 func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e error) {
+	switch a.cfg.Mode {
+	case ModePlan:
+		return a.runWithPlan(ctx, userPrompt)
+	case ModeAuto:
+		// Try plan generation first; fall back to direct if single-step or on error
+		plan, err := a.CreatePlan(ctx, userPrompt)
+		if err != nil || len(plan.Steps) <= 1 {
+			return a.runDirect(ctx, userPrompt)
+		}
+		return a.ExecutePlan(ctx, plan)
+	default: // ModeDirect or empty
+		return a.runDirect(ctx, userPrompt)
+	}
+}
+
+// runDirect is the original single-skill selection + execution flow.
+func (a *Agent) runDirect(ctx context.Context, userPrompt string) (string, error) {
 	selectedSkill, err := a.selectAndPrepareSkill(ctx, userPrompt)
 	if err != nil {
 		return "", err
@@ -55,8 +78,7 @@ func (a *Agent) Run(ctx context.Context, userPrompt string) (resp string, e erro
 	for _, v := range a.cfg.BaseTools {
 		selectedSkill.BaseTools = append(selectedSkill.BaseTools, v)
 	}
-	resp, e = a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
-	return
+	return a.executeSkillWithTools(ctx, userPrompt, selectedSkill)
 }
 
 // Messages reuse all configurations, just reset context message
