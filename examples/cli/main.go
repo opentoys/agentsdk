@@ -17,12 +17,13 @@ func main() {
 	fs := os.DirFS(os.Getenv("SKILL_DIR"))
 	rcfg := agentsdk.Config{
 		SkillsFS: fs,
+		Mode:     agentsdk.ModePlan,
 		// SkillsDir: os.Getenv("SKILL_DIR"),
 		Debug: &log.DefaultLog{},
 		ChatClient: aichat.NewOpenAI(
-			aichat.WithOpenAIKey(os.Getenv("OPENAI_API_KEY")),
-			aichat.WithOpenAIBase(os.Getenv("OPENAI_API_BASE")),
-			aichat.WithOpenAIModel(os.Getenv("OPENAI_API_MODE")),
+			aichat.WithKey(os.Getenv("OPENAI_API_KEY")),
+			aichat.WithBase(os.Getenv("OPENAI_API_BASE")),
+			aichat.WithModel(os.Getenv("OPENAI_API_MODE")),
 		),
 		BaseTools: map[string]types.Tool{
 			"http": tool.DefineHTTPTool(),

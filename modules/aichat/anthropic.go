@@ -11,48 +11,22 @@ import (
 	"github.com/opentoys/agentsdk/types"
 )
 
-const chaturl = "/chat/completions"
+const anthropicurl = "/chat/completions"
 
-type config struct {
-	apikey string
-	base   string
-	model  string
-}
-
-type Option func(*config)
-
-func WithKey(apikey string) Option {
-	return func(oa *config) {
-		oa.apikey = apikey
-	}
-}
-
-func WithBase(base string) Option {
-	return func(oa *config) {
-		oa.base = base
-	}
-}
-
-func WithModel(model string) Option {
-	return func(oa *config) {
-		oa.model = model
-	}
-}
-
-type openai struct {
+type anthropic struct {
 	*config
 }
 
-func NewOpenAI(opts ...Option) *openai {
+func NewAnthropic(opts ...Option) *anthropic {
 	cfg := &config{}
 	for _, f := range opts {
 		f(cfg)
 	}
-	return &openai{config: cfg}
+	return &anthropic{config: cfg}
 }
 
-func (s *openai) CreateChatCompletion(ctx context.Context, in types.ChatCompletionRequest) (out types.ChatCompletionResponse, e error) {
-	var url = s.base + chaturl
+func (s *anthropic) CreateChatCompletion(ctx context.Context, in types.ChatCompletionRequest) (out types.ChatCompletionResponse, e error) {
+	var url = s.base + anthropicurl
 	in.Model = s.model
 	buf, e := jsonx.Marshal(in)
 	if e != nil {
@@ -62,7 +36,9 @@ func (s *openai) CreateChatCompletion(ctx context.Context, in types.ChatCompleti
 	if e != nil {
 		return
 	}
-	req.Header.Set("Authorization", "Bearer "+s.apikey)
+	req.Header.Set("Authorization", s.apikey)
+	req.Header.Set("x-api-key", s.apikey)
+	req.Header.Set("anthropic-version", "2023-06-01")
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", "go-agentsdk/1.0.0")
 
