@@ -69,7 +69,7 @@ func (s *Agent) loadSkill(ctx context.Context, in string, dir fs.FS) (out string
 	return s.runWithSkill(ctx, in, sk)
 }
 
-func (a *Agent) selectSkill(ctx context.Context, in string, skills map[string]skill.SkillPackage) (string, error) {
+func (a *Agent) selectSkill(ctx context.Context, in string, skills map[string]skill.SkillPackage) (out string, e error) {
 	var sb strings.Builder
 	sb.WriteString("User Request: ")
 	sb.WriteString(in)
@@ -87,22 +87,21 @@ func (a *Agent) selectSkill(ctx context.Context, in string, skills map[string]sk
 
 	skillPrompt := skill.SkillsToPrompt(skills, a.cfg.Tools)
 	// Use a temporary message history for skill selection
-	req := types.ChatCompletionRequest{
+	resp, e := a.cfg.ChatClient.CreateChatCompletion(ctx, types.ChatCompletionRequest{
 		Messages: []types.ChatCompletionMessage{
 			{
 				Role:    types.ChatMessageRoleSystem,
-				Content: "You are a skill selection assistant. Your ONLY job is to select the most appropriate skill from the available list. You must ALWAYS choose exactly one skill - never refuse to select or try to answer the question yourself.\n" + skillPrompt,
+				Content: skillPrompt,
 			},
 			{
 				Role:    types.ChatMessageRoleUser,
 				Content: sb.String(),
 			},
 		},
-		Temperature: 0,
-	}
-	resp, err := a.cfg.ChatClient.CreateChatCompletion(ctx, req)
-	if err != nil {
-		return "", err
+	})
+	if e != nil {
+		e = fmt.Errorf("select skill error: %v", e)
+		return
 	}
 
 	content := strings.TrimSpace(resp.Choices[0].Message.Content)

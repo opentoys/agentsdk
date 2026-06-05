@@ -319,6 +319,7 @@ func SkillsToPrompt(skills map[string]SkillPackage, tools []types.Tool) string {
 	var builder strings.Builder
 
 	// Add skills instructions header
+	builder.WriteString("You are a skill selection assistant. Your ONLY job is to select the most appropriate skill from the available list. You must ALWAYS choose exactly one skill - never refuse to select or try to answer the question yourself.\n")
 	builder.WriteString("<skills_instructions>\n")
 	builder.WriteString("When users ask you to perform tasks, check if any of the available skills below can help complete the task more effectively.\n\n")
 
