@@ -11,5 +11,5 @@ type Config struct {
 	ChatClient  OpenAIChatClient
 	McpSessions ClientSessioner
 	History     []ChatCompletionMessage // Defining historical messages
-	BaseTools   map[string]Tool         // Custom tool collection
+	Tools       []Tool                  // Custom tool collection
 }

@@ -18,10 +18,16 @@ type Agent struct {
 	client   types.OpenAIChatClient
 	messages []types.ChatCompletionMessage
 	cfg      *types.Config
+	tools    map[string]types.Tool
 }
 
 func New(cfg types.Config) *Agent {
-	return &Agent{cfg: &cfg}
+	a := &Agent{cfg: &cfg}
+	a.tools = make(map[string]types.Tool)
+	for _, v := range cfg.Tools {
+		a.tools[v.Function.Name] = v
+	}
+	return a
 }
 
 func (s *Agent) Run(ctx context.Context, in string) (out string, e error) {
@@ -79,7 +85,7 @@ func (a *Agent) selectSkill(ctx context.Context, in string, skills map[string]sk
 	sb.WriteString("\nBased on the user request and guidelines above, which single skill is the most appropriate to use?")
 	sb.WriteString("\n\nIMPORTANT: You MUST select exactly one skill from the above list, even if the request seems simple. Respond with ONLY the skill name, nothing else. Do not explain your choice or answer the question directly.")
 
-	skillPrompt := skill.SkillsToPrompt(skills, a.cfg.BaseTools)
+	skillPrompt := skill.SkillsToPrompt(skills, a.cfg.Tools)
 	// Use a temporary message history for skill selection
 	req := types.ChatCompletionRequest{
 		Messages: []types.ChatCompletionMessage{
@@ -125,9 +131,7 @@ func (s *Agent) runWithSkill(ctx context.Context, in string, sk skill.SkillPacka
 		Role:    types.ChatMessageRoleUser,
 		Content: in,
 	})
-	for _, v := range s.cfg.BaseTools {
-		sk.BaseTools = append(sk.BaseTools, v)
-	}
+	sk.BaseTools = append(sk.BaseTools, s.cfg.Tools...)
 
 	tools, scripts := skill.GenerateToolDefinitions(&sk)
 
@@ -218,7 +222,7 @@ func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts m
 	// Clean the arguments before parsing
 	cleanedArgs := cleanToolArguments(toolCall.Function.Arguments)
 
-	var exec, ok = s.cfg.BaseTools[toolCall.Function.Name]
+	var exec, ok = s.tools[toolCall.Function.Name]
 	if !ok {
 		// Handle custom script tools from scriptMap
 		if scriptPath, ok := scripts[toolCall.Function.Name]; ok {

@@ -315,7 +315,7 @@ func ParseSkillPackages(root fs.FS) (skills []*SkillPackage, e error) {
 }
 
 // SkillsToPrompt converts a slice of SkillPackage objects to a prompt string
-func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]types.Tool) string {
+func SkillsToPrompt(skills map[string]SkillPackage, tools []types.Tool) string {
 	var builder strings.Builder
 
 	// Add skills instructions header

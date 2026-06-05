@@ -23,9 +23,9 @@ func main() {
 			aichat.WithBase(os.Getenv("OPENAI_API_BASE")),
 			aichat.WithModel(os.Getenv("OPENAI_API_MODE")),
 		),
-		BaseTools: map[string]types.Tool{
-			"http": tool.DefineHTTPTool(),
-			"read": tool.DefineReadLocal(fs),
+		Tools: []types.Tool{
+			tool.DefineHTTPTool(),
+			tool.DefineReadLocal(fs),
 		},
 	}
 
