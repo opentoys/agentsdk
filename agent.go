@@ -22,7 +22,7 @@ type Agent struct {
 }
 
 func New(cfg types.Config) *Agent {
-	a := &Agent{cfg: &cfg}
+	a := &Agent{cfg: &cfg, messages: cfg.History}
 	a.tools = make(map[string]types.Tool)
 	for _, v := range cfg.Tools {
 		a.tools[v.Function.Name] = v
