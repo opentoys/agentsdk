@@ -43,9 +43,10 @@ func GenerateToolDefinitions(skill *SkillPackage) (tools []types.Tool, scriptMap
 	} else {
 		// 自动生成脚本工具
 		for _, scriptRelPath := range skill.Resources.Scripts {
-			toolDef, toolName := generateScriptTool(skill.Path, scriptRelPath)
+			toolpath := filepath.Join(skill.Path, scriptRelPath)
+			toolDef, toolName := generateScriptTool(toolpath)
 			tools = append(tools, toolDef)
-			scriptMap[toolName] = filepath.Join(skill.Path, scriptRelPath)
+			scriptMap[toolName] = toolpath
 		}
 	}
 
@@ -134,7 +135,7 @@ func GetToolDefinitions(skill *SkillPackage) []ToolDefinition {
 	return skill.Meta.Tools
 }
 
-func generateScriptTool(skillPath, scriptRelPath string) (types.Tool, string) {
+func generateScriptTool(scriptRelPath string) (types.Tool, string) {
 	// Normalize name: replace non-alphanumeric with underscore
 	safeName := strings.Map(func(r rune) rune {
 		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {

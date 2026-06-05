@@ -12,42 +12,55 @@ import (
 )
 
 const chaturl = "/chat/completions"
+const base = "https://api.deepseek.com/v1"
+const mdoel = "deepseek-v4-flash"
 
-type openAI struct {
+type config struct {
 	apikey string
 	base   string
 	model  string
+	uri    string
 }
 
-type Option func(*openAI)
+type Option func(*config)
 
-func WithOpenAIKey(apikey string) Option {
-	return func(oa *openAI) {
+func WithKey(apikey string) Option {
+	return func(oa *config) {
 		oa.apikey = apikey
 	}
 }
 
-func WithOpenAIBase(base string) Option {
-	return func(oa *openAI) {
+func WithBase(base string) Option {
+	return func(oa *config) {
 		oa.base = base
 	}
 }
 
-func WithOpenAIModel(model string) Option {
-	return func(oa *openAI) {
+func WithModel(model string) Option {
+	return func(oa *config) {
 		oa.model = model
 	}
 }
 
-func NewOpenAI(opts ...Option) *openAI {
-	sdk := &openAI{}
-	for _, f := range opts {
-		f(sdk)
-	}
-	return sdk
+type openai struct {
+	*config
 }
 
-func (s *openAI) CreateChatCompletion(ctx context.Context, in types.ChatCompletionRequest) (out types.ChatCompletionResponse, e error) {
+func New(opts ...Option) *openai {
+	cfg := &config{}
+	for _, f := range opts {
+		f(cfg)
+	}
+	if cfg.base == "" {
+		cfg.base = base
+	}
+	if cfg.model == "" {
+		cfg.model = mdoel
+	}
+	return &openai{config: cfg}
+}
+
+func (s *openai) CreateChatCompletion(ctx context.Context, in types.ChatCompletionRequest) (out types.ChatCompletionResponse, e error) {
 	var url = s.base + chaturl
 	in.Model = s.model
 	buf, e := jsonx.Marshal(in)
@@ -70,7 +83,6 @@ func (s *openAI) CreateChatCompletion(ctx context.Context, in types.ChatCompleti
 	if buf, e = io.ReadAll(resp.Body); e != nil {
 		return
 	}
-
 	if e = jsonx.Unmarshal(buf, &out); e != nil {
 		return
 	}

@@ -338,7 +338,8 @@ func SkillsToPrompt(skills map[string]SkillPackage, tools map[string]types.Tool)
 		builder.WriteString("When working on tasks, you have access to the following tools:\n\n")
 		for _, v := range tools {
 			if v.Prompt != "" {
-				builder.WriteString(v.Prompt + "\n")
+				builder.WriteString(v.Prompt)
+				builder.WriteString("\n")
 			} else {
 				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Function.Name, v.Function.Description))
 			}
