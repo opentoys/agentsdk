@@ -36,7 +36,7 @@ func shellQuote(s string) string {
 }
 
 // getAvailableSkillNames returns a slice of available skill names for error messages
-func getAvailableSkillNames(skills map[string]skill.SkillPackage) []string {
+func getAvailableSkillNames(skills map[string]*skill.SkillPackage) []string {
 	names := make([]string, 0, len(skills))
 	for name := range skills {
 		names = append(names, name)
@@ -45,7 +45,7 @@ func getAvailableSkillNames(skills map[string]skill.SkillPackage) []string {
 }
 
 // extractSkillName extracts the skill name from AI response content
-func extractSkillName(content string, skills map[string]skill.SkillPackage) string {
+func extractSkillName(content string, skills map[string]*skill.SkillPackage) string {
 	// First, check if the content is already a valid skill name
 	if _, exists := skills[content]; exists {
 		return content

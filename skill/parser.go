@@ -287,6 +287,9 @@ func ParseSkillPackage(root fs.FS, dirPath string) (*SkillPackage, error) {
 // It returns a slice of successfully parsed SkillPackage objects.
 
 func ParseSkillPackages(root fs.FS) (skills []*SkillPackage, e error) {
+	if root == nil {
+		return
+	}
 	skillDirs := make(map[string]struct{})
 	walkErr := fs.WalkDir(root, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
@@ -315,7 +318,7 @@ func ParseSkillPackages(root fs.FS) (skills []*SkillPackage, e error) {
 }
 
 // SkillsToPrompt converts a slice of SkillPackage objects to a prompt string
-func SkillsToPrompt(skills map[string]SkillPackage, tools []types.Tool) string {
+func SkillsToPrompt(skills map[string]*SkillPackage, tools []types.Tool) string {
 	var builder strings.Builder
 
 	// Add skills instructions header
