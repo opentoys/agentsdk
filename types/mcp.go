@@ -22,8 +22,8 @@ type Tool struct {
 }
 
 type FunctionDefinition struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	Strict      bool   `json:"strict,omitempty"`
-	Parameters  any    `json:"parameters"`
+	Name        string         `json:"name"`
+	Description string         `json:"description,omitempty"`
+	Strict      bool           `json:"strict,omitempty"`
+	Parameters  map[string]any `json:"parameters"`
 }

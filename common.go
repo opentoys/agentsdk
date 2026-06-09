@@ -26,6 +26,29 @@ func RegisterBash(f func(context.Context, string) (string, error)) {
 	bash = f
 }
 
+var basetoolinput = map[string]any{
+	"type": "object",
+	"properties": map[string]any{
+		"input": map[string]any{
+			"type":        "string",
+			"description": "传递给子代理的自然语言任务描述",
+		},
+	},
+	"required": []string{"input"},
+}
+
+func defaultMap(s ...map[string]any) map[string]any {
+	if len(s) == 0 {
+		return nil
+	}
+	for _, v := range s {
+		if v != nil {
+			return v
+		}
+	}
+	return s[len(s)-1]
+}
+
 // shellQuote quotes a string for safe shell execution
 func shellQuote(s string) string {
 	if s == "" {
