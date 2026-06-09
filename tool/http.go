@@ -97,12 +97,14 @@ func request(in httpParams) (rw string, e error) {
 	if e != nil {
 		return
 	}
-	var header map[string]string
-	if e = json.Unmarshal([]byte(in.Header), &header); e != nil {
-		return
-	}
-	for k, v := range header {
-		req.Header.Add(k, v)
+	if in.Header != "" {
+		var header map[string]string
+		if e = json.Unmarshal([]byte(in.Header), &header); e != nil {
+			return
+		}
+		for k, v := range header {
+			req.Header.Add(k, v)
+		}
 	}
 
 	resp, e := http.DefaultClient.Do(req)
