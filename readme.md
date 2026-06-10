@@ -198,12 +198,12 @@ Agent 不硬编码任何领域知识，而是通过四层工具体系 + SubAgent
 
 ### 四层工具体系
 
-| 层级             | 来源                   | 说明                                                          | 示例                        |
-| ---------------- | ---------------------- | ------------------------------------------------------------- | --------------------------- |
-| **SubAgent**     | `Config.SubAgents`     | 声明式子代理配置，每个子代理拥有独立的 Agent 实例和消息历史   | researcher, writer, dealer  |
-| **BaseTools**    | `Config.Tools`         | 通用基础能力，也可通过 `NewTool()` 自定义                     | bash, http, read, search    |
-| **Script Tools** | 技能包 `scripts/` 目录 | 技能专属的 `.py/.ts/.js/.sh` 脚本，自动或手动定义为工具       | run_query.py, run_deploy.sh |
-| **MCP Tools**    | 外部 MCP 服务器        | 通过 Model Context Protocol 连接的远程服务工具                | 组件查询, 数据库操作        |
+| 层级             | 来源                   | 说明                                                        | 示例                        |
+| ---------------- | ---------------------- | ----------------------------------------------------------- | --------------------------- |
+| **SubAgent**     | `Config.SubAgents`     | 声明式子代理配置，每个子代理拥有独立的 Agent 实例和消息历史 | researcher, writer, dealer  |
+| **BaseTools**    | `Config.Tools`         | 通用基础能力，也可通过 `NewTool()` 自定义                   | bash, http, read, search    |
+| **Script Tools** | 技能包 `scripts/` 目录 | 技能专属的 `.py/.ts/.js/.sh` 脚本，自动或手动定义为工具     | run_query.py, run_deploy.sh |
+| **MCP Tools**    | 外部 MCP 服务器        | 通过 Model Context Protocol 连接的远程服务工具              | 组件查询, 数据库操作        |
 
 ### 执行流程
 
@@ -301,9 +301,13 @@ agent.RunWithPlan(ctx, "调研 AI 趋势并写报告")
 ```json
 {
   "setps": [
-    {"name": "researcher", "input": "调研 2024 年 AI 领域重大突破"},
-    {"name": "writer",     "input": "基于 {{result:researcher}} 撰写一份报告"},
-    {"name": "reviewer",   "input": "审查 {{result:writer}} 的质量和准确性", "after": ["writer"]}
+    { "name": "researcher", "input": "调研 2024 年 AI 领域重大突破" },
+    { "name": "writer", "input": "基于 {{result:researcher}} 撰写一份报告" },
+    {
+      "name": "reviewer",
+      "input": "审查 {{result:writer}} 的质量和准确性",
+      "after": ["writer"]
+    }
   ]
 }
 ```
@@ -314,23 +318,23 @@ agent.RunWithPlan(ctx, "调研 AI 趋势并写报告")
 
 ### SubAgentConfig 配置
 
-| 字段          | 类型              | 必填 | 说明                                                 |
-| ------------- | ----------------- | ---- | ---------------------------------------------------- |
-| `Name`        | string            | **是** | 子代理名称，同时作为注册到父 Agent 的 Tool 名称     |
-| `Description` | string            | **是** | 能力描述，LLM 依据此描述决定何时调用该子代理         |
-| `SystemPrompt`| string            | 否   | 系统提示词，定义子代理的角色和行为准则               |
-| `SkillsFS`    | `fs.FS`           | 否   | 子代理专属技能文件系统，nil 时复用父 Agent 的        |
-| `Tools`       | `[]Tool`          | 否   | 子代理专属工具集，nil 时复用父 Agent 的              |
-| `McpSessions` | `ClientSessioner` | 否   | 子代理专属 MCP 会话，nil 时复用父 Agent 的           |
-| `Parameters`  | `map[string]any`  | 否   | 自定义 Tool 参数 Schema，nil 时使用默认的 input 字段 |
+| 字段           | 类型              | 必填   | 说明                                                 |
+| -------------- | ----------------- | ------ | ---------------------------------------------------- |
+| `Name`         | string            | **是** | 子代理名称，同时作为注册到父 Agent 的 Tool 名称      |
+| `Description`  | string            | **是** | 能力描述，LLM 依据此描述决定何时调用该子代理         |
+| `SystemPrompt` | string            | 否     | 系统提示词，定义子代理的角色和行为准则               |
+| `SkillsFS`     | `fs.FS`           | 否     | 子代理专属技能文件系统，nil 时复用父 Agent 的        |
+| `Tools`        | `[]Tool`          | 否     | 子代理专属工具集，nil 时复用父 Agent 的              |
+| `McpSessions`  | `ClientSessioner` | 否     | 子代理专属 MCP 会话，nil 时复用父 Agent 的           |
+| `Parameters`   | `map[string]any`  | 否     | 自定义 Tool 参数 Schema，nil 时使用默认的 input 字段 |
 
 ### PlanStep 结构
 
-| 字段    | 类型     | 说明                           |
-| ------- | -------- | ------------------------------ |
-| `Name`  | string   | 步骤名称，对应子代理名或工具名 |
-| `Input` | string   | 传递给该步骤的自然语言输入     |
-| `After` | []string | 前置依赖步骤名称列表（DAG 模式）|
+| 字段    | 类型     | 说明                             |
+| ------- | -------- | -------------------------------- |
+| `Name`  | string   | 步骤名称，对应子代理名或工具名   |
+| `Input` | string   | 传递给该步骤的自然语言输入       |
+| `After` | []string | 前置依赖步骤名称列表（DAG 模式） |
 
 ---
 
@@ -340,33 +344,31 @@ agent.RunWithPlan(ctx, "调研 AI 趋势并写报告")
 
 #### Config 结构体
 
-| 字段          | 类型                            | 必填 | 说明                       |
-| ------------- | ------------------------------- | ---- | -------------------------- |
-| `ChatClient`  | `types.OpenAIChatClient`        | **是** | LLM 聊天客户端           |
-| `SkillsFS`    | `fs.FS`                         | 否   | 技能文件系统               |
-| `Debug`       | `types.Logger`                  | 否   | 日志接口实现               |
-| `McpSessions` | `types.ClientSessioner`         | 否   | MCP 会话管理器             |
-| `History`     | `[]types.ChatCompletionMessage` | 否   | 初始消息历史               |
-| `Tools`       | `[]Tool`                        | 否   | 自定义工具集合             |
-| `SubAgents`   | `[]SubAgentConfig`              | 否   | 声明式子代理配置列表       |
+| 字段          | 类型                            | 必填   | 说明                 |
+| ------------- | ------------------------------- | ------ | -------------------- |
+| `ChatClient`  | `types.OpenAIChatClient`        | **是** | LLM 聊天客户端       |
+| `SkillsFS`    | `fs.FS`                         | 否     | 技能文件系统         |
+| `Debug`       | `types.Logger`                  | 否     | 日志接口实现         |
+| `McpSessions` | `types.ClientSessioner`         | 否     | MCP 会话管理器       |
+| `History`     | `[]types.ChatCompletionMessage` | 否     | 初始消息历史         |
+| `Tools`       | `[]Tool`                        | 否     | 自定义工具集合       |
+| `SubAgents`   | `[]SubAgentConfig`              | 否     | 声明式子代理配置列表 |
 
 #### 核心方法
 
-| 方法           | 签名                                                         | 说明                                                    |
-| -------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
-| `New`          | `New(cfg types.Config) *Agent`                               | 创建并初始化 Agent（含子代理注册）                      |
-| `Run`          | `(a *Agent) Run(ctx, prompt string) (string, error)`         | **主入口**：技能选择 + 工具调用循环，LLM 自动编排子代理 |
-| `RunWithPlan`  | `(a *Agent) RunWithPlan(ctx, prompt string) (string, error)` | **Plan 模式**：LLM 生成计划 → DAG/顺序执行子代理        |
-| `CallTool`     | `(a *Agent) CallTool(ctx, name, args string) (string, error)`| 通过名称调用已注册的工具（含子代理）                    |
+| 方法          | 签名                                                         | 说明                                                    |
+| ------------- | ------------------------------------------------------------ | ------------------------------------------------------- |
+| `New`         | `New(cfg types.Config) *Agent`                               | 创建并初始化 Agent（含子代理注册）                      |
+| `Run`         | `(a *Agent) Run(ctx, prompt string) (string, error)`         | **主入口**：技能选择 + 工具调用循环，LLM 自动编排子代理 |
+| `RunWithPlan` | `(a *Agent) RunWithPlan(ctx, prompt string) (string, error)` | **Plan 模式**：LLM 生成计划 → DAG/顺序执行子代理        |
 
 #### 注册函数
 
-| 函数           | 签名                                                          | 说明                              |
-| -------------- | ------------------------------------------------------------- | --------------------------------- |
-| `NewTool`      | `NewTool(cfg types.ToolConfig) Tool`                          | 创建自定义 Tool（快捷构造）       |
-| `WarpSkill`    | `WarpSkill(sk *SkillPackage, a *Agent) Tool`                  | 将 SkillPackage 包装为 Tool       |
-| `RegisterExec` | `RegisterExec(ext, exec string)`                              | 注册脚本执行器（如 `.py` → `python3`） |
-| `RegisterBash` | `RegisterBash(f func(context.Context, string) (string, error))` | 覆盖默认的 Bash 执行函数 |
+| 函数           | 签名                                          | 说明                              |
+| -------------- | --------------------------------------------- | --------------------------------- |
+| `NewTool`      | `NewTool(cfg types.ToolConfig) Tool`          | 创建自定义 Tool（快捷构造）       |
+| `WarpSkill`    | `WarpSkill(sk *SkillPackage, a *Agent) Tool`  | 将 SkillPackage 包装为 Tool       |
+| `RegisterExec` | `RegisterExec(ext string, exec types.Runner)` | 注册脚本执行器（如 `.js` → goja） |
 
 #### ToolConfig 结构体
 
@@ -382,20 +384,21 @@ t := agentsdk.NewTool(types.ToolConfig{
 })
 ```
 
-| 字段          | 类型                                                | 必填 | 说明                          |
-| ------------- | --------------------------------------------------- | ---- | ----------------------------- |
-| `Name`        | string                                              | **是** | 工具名称                    |
-| `Description` | string                                              | **是** | 工具描述                    |
-| `Parameters`  | `map[string]any`                                    | 否   | 自定义参数 Schema            |
-| `Exec`        | `func(ctx, in string) (out string, e error)`        | **是** | 执行函数                    |
+| 字段          | 类型             | 必填   | 说明              |
+| ------------- | ---------------- | ------ | ----------------- |
+| `Name`        | string           | **是** | 工具名称          |
+| `Description` | string           | **是** | 工具描述          |
+| `Parameters`  | `map[string]any` | 否     | 自定义参数 Schema |
+| `Exec`        | `types.Runner`   | **是** | 执行函数          |
 
-默认脚本执行器映射：
+默认脚本运行时映射：
 
-| 扩展名   | 执行命令    |
-| -------- | ----------- |
-| `.py`    | `python3`   |
-| `.js`    | `node`      |
-| `.tengo` | `tengo`     |
+| 扩展名 | 执行命令 |
+| ------ | -------- |
+| `.py`  | `python` |
+| `.js`  | `node`   |
+| `.php` | `php`    |
+| `.rb`  | `ruby`   |
 
 ---
 
@@ -434,16 +437,16 @@ allowedTools:
 
 #### Skill 元数据字段
 
-| 字段           | 类型             | 说明                     |
-| -------------- | ---------------- | ------------------------ |
-| `Name`         | string           | 技能名称（唯一标识）     |
-| `Description`  | string           | 技能描述                 |
-| `AllowedTools` | []string         | 允许使用的工具列表       |
-| `Model`        | string           | 推荐使用的模型           |
-| `Author`       | string           | 作者                     |
-| `Version`      | string           | 版本号                   |
-| `License`      | string           | 许可证                   |
-| `Tools`        | []ToolDefinition | 自定义工具定义           |
+| 字段           | 类型             | 说明                 |
+| -------------- | ---------------- | -------------------- |
+| `Name`         | string           | 技能名称（唯一标识） |
+| `Description`  | string           | 技能描述             |
+| `AllowedTools` | []string         | 允许使用的工具列表   |
+| `Model`        | string           | 推荐使用的模型       |
+| `Author`       | string           | 作者                 |
+| `Version`      | string           | 版本号               |
+| `License`      | string           | 许可证               |
+| `Tools`        | []ToolDefinition | 自定义工具定义       |
 
 ---
 
@@ -453,21 +456,21 @@ allowedTools:
 
 ```go
 type Tool struct {
-    Prompt   string                    // 可选：附加提示信息（不序列化到 API）
-    Type     string                    // 工具类型，默认 "function"
-    Function *FunctionDefinition       // 函数定义（名称、描述、参数 Schema）
-    Exec     func(ctx context.Context, in string) (string, error) // 执行函数
+    Prompt   string              // 可选：附加提示信息（不序列化到 API）
+    Type     string              // 工具类型，默认 "function"
+    Function *FunctionDefinition // 函数定义（名称、描述、参数 Schema）
+    Exec     Runner              // 执行函数（type Runner = func(ctx, in string) (out string, e error)）
 }
 ```
 
 #### 内置工具
 
-| 工具名          | 创建函数                        | 功能说明              | 安全特性                     |
-| --------------- | ------------------------------- | --------------------- | ---------------------------- |
-| `bash`          | `DefineBashTool()`              | Shell 命令执行        | 危险命令拦截 + 2 分钟超时    |
-| `http_request`  | `DefineHTTPTool()`              | HTTP 请求（curl兼容） | JSON 自动美化输出            |
-| `read_local`    | `DefineReadLocal(fsys fs.FS)`   | 文件/目录读取         | 基于 fs.FS，支持任意文件系统 |
-| `tavily_search` | `DefineTavilySearch()`          | Tavily AI 搜索        | 默认上限 20 条               |
+| 工具名          | 创建函数                      | 功能说明              | 安全特性                     |
+| --------------- | ----------------------------- | --------------------- | ---------------------------- |
+| `bash`          | `DefineBashTool()`            | Shell 命令执行        | 危险命令拦截 + 2 分钟超时    |
+| `http_request`  | `DefineHTTPTool()`            | HTTP 请求（curl兼容） | JSON 自动美化输出            |
+| `read_local`    | `DefineReadLocal(fsys fs.FS)` | 文件/目录读取         | 基于 fs.FS，支持任意文件系统 |
+| `tavily_search` | `DefineTavilySearch()`        | Tavily AI 搜索        | 默认上限 20 条               |
 
 #### Bash 工具
 
@@ -477,7 +480,7 @@ type Tool struct {
 
 ```go
 result, err := tool.Bash("ls -la")                              // 默认 2 分钟超时
-result, err = tool.BashWithTimeout("sleep 5", 10*time.Second)   // 自定义超时
+result, err = tool.BashWithContext(ctx, "sleep 5")              // 自定义超时
 ```
 
 ---
@@ -646,15 +649,15 @@ g := dag.NewJson([]byte(`{"setps": [
 
 ## 设计模式
 
-| 模式         | 应用位置                              | 说明                             |
-| ------------ | ------------------------------------- | -------------------------------- |
-| **Strategy** | `OpenAIChatClient`, `Summarizer` 接口 | 可替换 LLM 后端和摘要引擎        |
-| **Plugin**   | Skill Package + SubAgent              | 技能/子代理作为插件热发现和注册  |
-| **Pipeline** | 发现 → 选择 → 执行                    | Agent 的核心流水线               |
-| **Adapter**  | MCP Client, aichat                    | 将外部格式适配为统一的 Tool 接口 |
-| **Option**   | aichat.New                            | 函数选项模式，灵活配置客户端     |
-| **Delegate** | SubAgent (Agent-as-Tool)              | 父 Agent 委托子 Agent 处理子任务 |
-| **Orchestrate** | RunWithPlan (DAG)                  | LLM 生成计划，框架按 DAG 编排    |
+| 模式            | 应用位置                              | 说明                             |
+| --------------- | ------------------------------------- | -------------------------------- |
+| **Strategy**    | `OpenAIChatClient`, `Summarizer` 接口 | 可替换 LLM 后端和摘要引擎        |
+| **Plugin**      | Skill Package + SubAgent              | 技能/子代理作为插件热发现和注册  |
+| **Pipeline**    | 发现 → 选择 → 执行                    | Agent 的核心流水线               |
+| **Adapter**     | MCP Client, aichat                    | 将外部格式适配为统一的 Tool 接口 |
+| **Option**      | aichat.New                            | 函数选项模式，灵活配置客户端     |
+| **Delegate**    | SubAgent (Agent-as-Tool)              | 父 Agent 委托子 Agent 处理子任务 |
+| **Orchestrate** | RunWithPlan (DAG)                     | LLM 生成计划，框架按 DAG 编排    |
 
 ---
 
