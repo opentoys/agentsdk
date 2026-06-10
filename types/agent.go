@@ -1,7 +1,6 @@
 package types
 
 import (
-	"context"
 	"io/fs"
 )
 
@@ -33,7 +32,7 @@ type ToolConfig struct {
 	Description  string // 子代理能力描述，用于 LLM 理解何时调用该子代理
 	SystemPrompt string // 子代理的系统提示词（可选，覆盖 skill 自身的 prompt）
 	Parameters   map[string]any
-	Exec         func(ctx context.Context, in string) (out string, e error)
+	Exec         Runner
 }
 
 // PlanStep 表示计划中的一个步骤

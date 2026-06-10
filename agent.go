@@ -6,12 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
 	"path/filepath"
 	"strings"
 
 	"github.com/opentoys/agentsdk/modules/dag"
 	"github.com/opentoys/agentsdk/skill"
+	"github.com/opentoys/agentsdk/tool"
 	"github.com/opentoys/agentsdk/types"
 )
 
@@ -128,7 +128,6 @@ func (s *Agent) runWithSkill(ctx context.Context, in string, sk *skill.SkillPack
 		tools = append(tools, v)
 	}
 	var scripts map[string]string
-	var cwd string
 	if sk != nil {
 		var skillBody strings.Builder
 		skillBody.WriteString("## SELECTED SKILL\n")
@@ -145,7 +144,6 @@ func (s *Agent) runWithSkill(ctx context.Context, in string, sk *skill.SkillPack
 		})
 		sk.BaseTools = append(sk.BaseTools, tools...)
 		tools, scripts = skill.GenerateToolDefinitions(sk)
-		cwd = sk.Path
 	}
 
 	s.messages = append(s.messages, types.ChatCompletionMessage{
@@ -200,7 +198,7 @@ func (s *Agent) runWithSkill(ctx context.Context, in string, sk *skill.SkillPack
 					}
 				}
 			} else {
-				toolOutput, e = s.execTool(ctx, tc, scripts, cwd)
+				toolOutput, e = s.execTool(ctx, tc, scripts)
 			}
 
 			if e != nil {
@@ -231,12 +229,7 @@ You can try:
 	return "", errors.New("exceeded maximum tool call iterations")
 }
 
-func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts map[string]string, skillPath string) (out string, e error) {
-	// Set workdir if skillPath is available
-	if skillPath != "" {
-		os.Setenv("WORKDIR", skillPath)
-		defer os.Unsetenv("WORKDIR")
-	}
+func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts map[string]string) (out string, e error) {
 	// Clean the arguments before parsing
 	cleanedArgs := cleanToolArguments(toolCall.Function.Arguments)
 
@@ -255,11 +248,13 @@ func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts m
 
 			// Build command based on script extension
 			var ext = filepath.Ext(scriptPath)
-			var cmd = scriptexec[ext]
-			if cmd == "" { // 如果没有匹配的后缀，则直接执行
-				cmd = scriptPath
-			} else {
-				cmd = fmt.Sprintf("%s %s", cmd, scriptPath)
+			var runner = scriptexec[ext]
+			var cmd = scriptPath
+			if runner == nil {
+				runner = tool.BashWithContext
+				if rt, ok := scriptruntime[ext]; ok {
+					cmd = rt + " " + cmd
+				}
 			}
 
 			// Add arguments if provided
@@ -269,11 +264,11 @@ func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts m
 				}
 			}
 
-			out, e = bash(ctx, cmd)
+			out, e = runner(ctx, cmd)
 			if e != nil {
 				return "", fmt.Errorf("tool execution failed for %s: %w", toolCall.Function.Name, e)
 			}
-			return
+			return out, e
 		}
 		return "", fmt.Errorf("unknown tool: %s", toolCall.Function.Name)
 	}

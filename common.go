@@ -1,29 +1,22 @@
 package agentsdk
 
 import (
-	"context"
 	"strings"
 
 	"github.com/opentoys/agentsdk/skill"
-	"github.com/opentoys/agentsdk/tool"
+	"github.com/opentoys/agentsdk/types"
 )
 
-var scriptexec = map[string]string{
-	".py":    "python3",
-	".js":    "node",
-	".tengo": "tengo",
+var scriptexec = map[string]types.Runner{}
+var scriptruntime = map[string]string{
+	".py":  "python",
+	".js":  "node",
+	".php": "php",
+	".rb":  "ruby",
 }
 
-var bash = func(ctx context.Context, cmd string) (string, error) {
-	return tool.Bash(cmd)
-}
-
-func RegisterExec(ext, exec string) {
+func RegisterExec(ext string, exec types.Runner) {
 	scriptexec[ext] = exec
-}
-
-func RegisterBash(f func(context.Context, string) (string, error)) {
-	bash = f
 }
 
 var basetoolinput = map[string]any{
