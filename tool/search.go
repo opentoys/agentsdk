@@ -15,20 +15,18 @@ import (
 
 func DefineTavilySearch() types.Tool {
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        "tavily_search",
-			Description: "Performs a web search using the Tavily API for the given query and returns a summary of results.",
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"query": map[string]any{
-						"type":        "string",
-						"description": "The search query.",
-					},
+		Type:        types.ToolTypeFunction,
+		Name:        "tavily_search",
+		Description: "Performs a web search using the Tavily API for the given query and returns a summary of results.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"query": map[string]any{
+					"type":        "string",
+					"description": "The search query.",
 				},
-				"required": []string{"query"},
 			},
+			"required": []string{"query"},
 		},
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {

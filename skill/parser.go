@@ -345,7 +345,7 @@ func SkillsToPrompt(skills map[string]*SkillPackage, tools []types.Tool) string 
 				builder.WriteString(v.Prompt)
 				builder.WriteString("\n")
 			} else {
-				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Function.Name, v.Function.Description))
+				builder.WriteString(fmt.Sprintf("**%s**: %s\n", v.Name, v.Description))
 			}
 		}
 		builder.WriteString("</available_tools_instructions>\n\n")

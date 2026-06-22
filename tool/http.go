@@ -23,36 +23,34 @@ func DefineHTTPTool() types.Tool {
 		envmap[lst[0]] = strings.Join(lst[1:], "=")
 	}
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        "http",
-			Description: "Run a http request. Use for: send a http reuqest.",
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"method": map[string]any{
-						"type":        "string",
-						"description": "The http request method.",
-					},
-					"url": map[string]any{
-						"type":        "string",
-						"description": "The http request method.",
-					},
-					"header": map[string]any{
-						"type":        "string",
-						"description": `The http request header json string. Such as: {"content-type":"plian/text"}`,
-					},
-					"body": map[string]any{
-						"type":        "string",
-						"description": "The http request body.",
-					},
-					"timeout": map[string]any{
-						"type":        "string",
-						"description": "The http request for timeout. such as: 30s, 1m30s, 500ms etc.",
-					},
+		Type:        types.ToolTypeFunction,
+		Name:        "http",
+		Description: "Run a http request. Use for: send a http reuqest.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"method": map[string]any{
+					"type":        "string",
+					"description": "The http request method.",
 				},
-				"required": []string{"method", "url"},
+				"url": map[string]any{
+					"type":        "string",
+					"description": "The http request method.",
+				},
+				"header": map[string]any{
+					"type":        "string",
+					"description": `The http request header json string. Such as: {"content-type":"plian/text"}`,
+				},
+				"body": map[string]any{
+					"type":        "string",
+					"description": "The http request body.",
+				},
+				"timeout": map[string]any{
+					"type":        "string",
+					"description": "The http request for timeout. such as: 30s, 1m30s, 500ms etc.",
+				},
 			},
+			"required": []string{"method", "url"},
 		},
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params httpParams

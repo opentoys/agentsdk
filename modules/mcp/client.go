@@ -79,7 +79,7 @@ func (c *Client) ListTools(ctx context.Context) (allTools []types.Tool, e error)
 			continue
 		}
 		for _, tool := range tools {
-			tool.Function.Name = fmt.Sprintf("%s__%s", serverName, tool.Function.Name)
+			tool.Name = fmt.Sprintf("%s__%s", serverName, tool.Name)
 			allTools = append(allTools, tool)
 		}
 	}

@@ -15,15 +15,11 @@ type ClientSessioner interface {
 }
 
 type Tool struct {
-	Prompt   string              `json:"-"`
-	Type     string              `json:"type"`
-	Function *FunctionDefinition `json:"function,omitempty"`
-	Exec     Runner              `json:"-"`
-}
-
-type FunctionDefinition struct {
 	Name        string         `json:"name"`
+	Type        string         `json:"type"`
 	Description string         `json:"description,omitempty"`
 	Strict      bool           `json:"strict,omitempty"`
 	Parameters  map[string]any `json:"parameters"`
+	Prompt      string         `json:"-"`
+	Exec        Runner         `json:"-"`
 }

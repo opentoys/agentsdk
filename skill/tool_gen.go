@@ -22,7 +22,7 @@ func GenerateToolDefinitions(skill *SkillPackage) (tools []types.Tool, scriptMap
 		}
 
 		for _, t := range skill.BaseTools {
-			if allowedMap[t.Function.Name] {
+			if allowedMap[t.Name] {
 				tools = append(tools, t)
 			}
 		}
@@ -37,7 +37,7 @@ func GenerateToolDefinitions(skill *SkillPackage) (tools []types.Tool, scriptMap
 			tool, scriptPath := generateToolFromDefinition(skill.Path, skill.Resources.Scripts, toolDef)
 			tools = append(tools, tool)
 			if scriptPath != "" {
-				scriptMap[tool.Function.Name] = scriptPath
+				scriptMap[tool.Name] = scriptPath
 			}
 		}
 	} else {
@@ -121,12 +121,10 @@ func generateToolFromDefinition(skillPath string, scripts []string, toolDef Tool
 	}
 
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        toolDef.Name,
-			Description: description,
-			Parameters:  parameters,
-		},
+		Type:        types.ToolTypeFunction,
+		Name:        toolDef.Name,
+		Description: description,
+		Parameters:  parameters,
 	}, scriptPath
 }
 
@@ -155,19 +153,17 @@ func generateScriptTool(scriptRelPath string) (types.Tool, string) {
 	}
 
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        toolName,
-			Description: description,
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"args": map[string]any{
-						"type":        "array",
-						"description": "Arguments to pass to the script.",
-						"items": map[string]any{
-							"type": "string",
-						},
+		Type:        types.ToolTypeFunction,
+		Name:        toolName,
+		Description: description,
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"args": map[string]any{
+					"type":        "array",
+					"description": "Arguments to pass to the script.",
+					"items": map[string]any{
+						"type": "string",
 					},
 				},
 			},

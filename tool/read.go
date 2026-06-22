@@ -12,20 +12,18 @@ import (
 
 func DefineReadLocal(dirs ...fs.FS) types.Tool {
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        "read",
-			Description: "Provides file and folder reading functions. skill read must be use this tool!!!",
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"path": map[string]any{
-						"type":        "string",
-						"description": "Use for when you need to read local information",
-					},
+		Type:        types.ToolTypeFunction,
+		Name:        "read",
+		Description: "Provides file and folder reading functions. skill read must be use this tool!!!",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"path": map[string]any{
+					"type":        "string",
+					"description": "Use for when you need to read local information",
 				},
-				"required": []string{"path"},
 			},
+			"required": []string{"path"},
 		},
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {

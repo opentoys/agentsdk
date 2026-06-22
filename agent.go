@@ -31,7 +31,7 @@ func New(cfg types.Config) *Agent {
 		subAgents: make(map[string]*Agent),
 	}
 	for _, v := range cfg.Tools {
-		a.tools[v.Function.Name] = v
+		a.tools[v.Name] = v
 	}
 	// 构建子代理并注册为 Tool
 	for _, sa := range cfg.SubAgents {
@@ -281,20 +281,18 @@ func (s *Agent) execTool(ctx context.Context, toolCall types.ToolCall, scripts m
 
 func WarpSkill(sk *skill.SkillPackage, a *Agent) types.Tool {
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        sk.Meta.Name,
-			Description: sk.Meta.Description,
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"input": map[string]any{
-						"type":        "string",
-						"description": "Any natural language description that requires current tools, the more formal the better",
-					},
+		Type:        types.ToolTypeFunction,
+		Name:        sk.Meta.Name,
+		Description: sk.Meta.Description,
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"input": map[string]any{
+					"type":        "string",
+					"description": "Any natural language description that requires current tools, the more formal the better",
 				},
-				"required": []string{"input"},
 			},
+			"required": []string{"input"},
 		},
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
@@ -311,12 +309,10 @@ func WarpSkill(sk *skill.SkillPackage, a *Agent) types.Tool {
 
 func NewTool(cfg types.ToolConfig) (tool types.Tool) {
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        cfg.Name,
-			Description: cfg.Description,
-			Parameters:  defaultMap(cfg.Parameters, basetoolinput),
-		},
+		Type:        types.ToolTypeFunction,
+		Name:        cfg.Name,
+		Description: cfg.Description,
+		Parameters:  defaultMap(cfg.Parameters, basetoolinput),
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
 				Input string `json:"input"`
@@ -357,12 +353,10 @@ func (s *Agent) buildSubAgentTool(sa types.SubAgentConfig) types.Tool {
 
 	// 包装为 Tool
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        sa.Name,
-			Description: sa.Description,
-			Parameters:  defaultMap(sa.Parameters, basetoolinput),
-		},
+		Type:        types.ToolTypeFunction,
+		Name:        sa.Name,
+		Description: sa.Description,
+		Parameters:  defaultMap(sa.Parameters, basetoolinput),
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
 				Input string `json:"input"`
@@ -446,8 +440,8 @@ func (s *Agent) generatePlan(ctx context.Context, input string) ([]types.PlanSte
 	sb.WriteString(input)
 	sb.WriteString("\n\n## 可用子代理\n")
 	for name, tool := range s.tools {
-		if tool.Function != nil {
-			sb.WriteString(fmt.Sprintf("- %s: %s\n", name, tool.Function.Description))
+		if tool.Exec != nil {
+			sb.WriteString(fmt.Sprintf("- %s: %s\n", name, tool.Description))
 		}
 	}
 	sb.WriteString("\n## 输出要求\n")

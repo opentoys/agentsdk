@@ -16,20 +16,18 @@ import (
 // DefineBashTool name: bash
 func DefineBashTool() types.Tool {
 	return types.Tool{
-		Type: types.ToolTypeFunction,
-		Function: &types.FunctionDefinition{
-			Name:        "bash",
-			Description: "Run a shell command. Use for: file operations (cat, grep, echo, head, tail), running scripts (python3, node, npx tsx, bash), git operations, package management (npm, pip), system commands (ls, find, curl), and any other shell command.",
-			Parameters: map[string]any{
-				"type": "object",
-				"properties": map[string]any{
-					"command": map[string]any{
-						"type":        "string",
-						"description": "The shell command to execute.",
-					},
+		Type:        types.ToolTypeFunction,
+		Name:        "bash",
+		Description: "Run a shell command. Use for: file operations (cat, grep, echo, head, tail), running scripts (python3, node, npx tsx, bash), git operations, package management (npm, pip), system commands (ls, find, curl), and any other shell command.",
+		Parameters: map[string]any{
+			"type": "object",
+			"properties": map[string]any{
+				"command": map[string]any{
+					"type":        "string",
+					"description": "The shell command to execute.",
 				},
-				"required": []string{"command"},
 			},
+			"required": []string{"command"},
 		},
 		Exec: func(ctx context.Context, in string) (out string, e error) {
 			var params struct {
